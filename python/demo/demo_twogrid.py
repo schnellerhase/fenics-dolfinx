@@ -49,7 +49,7 @@ def variational_problem(V):
 a_coarse, L_coarse = variational_problem(V_coarse)
 a_fine, L_fine = variational_problem(V_fine)
 
-problem_fine = LinearProblem(a_fine, L_fine, bcs=[bc_fine], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem_fine = LinearProblem(a_fine, L_fine, bcs=[bc_fine], petsc_options= {"ksp_type": "chebyshev", "pc_type": "none", "ksp_max_it": 10, "ksp_monitor": ""})
 u_fine = problem_fine.solve()
 
 with io.XDMFFile(comm, "out_twogrid/fine.xdmf", "w") as file:
