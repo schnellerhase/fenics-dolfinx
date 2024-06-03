@@ -28,22 +28,24 @@ def create_bc(V):
     facets_fine = mesh.locate_entities_boundary(
         V.mesh,
         dim=(V.mesh.topology.dim - 1),
-        marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0),
+        marker=lambda x: np.isclose(x[0], 0.0)
+                       | np.isclose(x[0], 1.0)
+                       | np.isclose(x[1], 0.0)
+                       | np.isclose(x[1], 1.0),
     )
 
     dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets_fine)
-    return fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
+    bc_func = fem.Function(V)
+    bc_func.interpolate(lambda x: 1 + x[0] ** 2 + 2 * x[1] ** 2)
+    return fem.dirichletbc(bc_func, dofs)
 
 bc_fine = create_bc(V_fine)
 
 def variational_problem(V):
-    u = ufl.TrialFunction(V)
-    v = ufl.TestFunction(V)
-    x = ufl.SpatialCoordinate(V.mesh)
-    f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
-    g = ufl.sin(5 * x[0])
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
-    L = inner(f, v) * dx + inner(g, v) * ds
+    f = -6
+    L = inner(f, v) * dx
     return a, L
 
 a_coarse, L_coarse = variational_problem(V_coarse)
