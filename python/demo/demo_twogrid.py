@@ -18,8 +18,8 @@ create_mesh = lambda n: mesh.create_rectangle(
     cell_type=mesh.CellType.triangle,
 )
 
-msh_coarse = create_mesh(8)
-msh_fine = create_mesh(16)
+msh_coarse = create_mesh(16)
+msh_fine = create_mesh(32)
 
 V_coarse = fem.functionspace(msh_coarse, ("Lagrange", 1))
 V_fine = fem.functionspace(msh_fine, ("Lagrange", 1))
