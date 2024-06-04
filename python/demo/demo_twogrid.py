@@ -40,6 +40,7 @@ def create_bc(V):
     return fem.dirichletbc(bc_func, dofs)
 
 bc_fine = create_bc(V_fine)
+bc_coarse = create_bc(V_coarse)
 
 def variational_problem(V):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -81,7 +82,7 @@ with io.XDMFFile(comm, "out_twogrid/restricted-residual.xdmf", "w") as file:
     file.write_mesh(msh_coarse)
     file.write_function(residual_coarse)
 
-problem_coarse = LinearProblem(a_fine, L_fine, bcs=[bc_fine], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem_coarse = LinearProblem(a_coarse, L_coarse, bcs=[bc_coarse], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 u_coarse = problem_coarse.solve()
 
 print(f"Coarse residual (post solve): {u_coarse.vector.norm():e}")
