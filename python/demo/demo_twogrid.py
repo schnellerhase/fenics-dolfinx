@@ -77,12 +77,16 @@ residual_coarse.interpolate_nonmatching(residual_fine, cells, interpolation_data
 
 print(f"Coarse residual (pre solve): {residual_coarse.vector.norm():e}")
 
+with io.XDMFFile(comm, "out_twogrid/restricted-residual.xdmf", "w") as file:
+    file.write_mesh(msh_coarse)
+    file.write_function(residual_coarse)
+
 problem_coarse = LinearProblem(a_fine, L_fine, bcs=[bc_fine], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 u_coarse = problem_coarse.solve()
 
 print(f"Coarse residual (post solve): {u_coarse.vector.norm():e}")
 
-with io.XDMFFile(comm, "out_twogrid/coarse.xdmf", "w") as file:
+with io.XDMFFile(comm, "out_twogrid/coarse-residual.xdmf", "w") as file:
     file.write_mesh(msh_coarse)
     file.write_function(u_coarse)
 
