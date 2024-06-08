@@ -50,6 +50,8 @@ jobs:
           sudo python3 -m venv $VIRTUAL_ENV
           # PATH="$VIRTUAL_ENV/bin:$PATH"
           source $VIRTUAL_ENV/bin/activate 
+          echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
+          echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
 
       - name: Install Python dependencies
         run: pip install mpi4py petsc4py nanobind scikit-build-core[pyproject] --upgrade
