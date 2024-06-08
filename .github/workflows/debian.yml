@@ -48,7 +48,8 @@ jobs:
         run: |
           VIRTUAL_ENV=/dolfinx-venv
           sudo python3 -m venv $VIRTUAL_ENV
-          PATH="$VIRTUAL_ENV/bin:$PATH"
+          # PATH="$VIRTUAL_ENV/bin:$PATH"
+          source $VIRTUAL_ENV/bin/activate 
 
       - name: Install Python dependencies
         run: pip install mpi4py petsc4py nanobind scikit-build-core[pyproject] --upgrade
