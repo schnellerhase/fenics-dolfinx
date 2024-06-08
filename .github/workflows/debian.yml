@@ -54,14 +54,14 @@ jobs:
           echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
 
       - name: Install Python dependencies
-        run: pip install mpi4py petsc4py nanobind scikit-build-core[pyproject] --upgrade
+        run: sudo pip install mpi4py petsc4py nanobind scikit-build-core[pyproject] --upgrade
 
       - name: Install FEniCS Python components
         run: |
-          pip install --no-cache-dir --upgrade pip setuptools
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          sudo pip install --no-cache-dir --upgrade pip setuptools
+          sudo pip install git+https://github.com/FEniCS/ufl.git
+          sudo pip install git+https://github.com/FEniCS/basix.git
+          sudo pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
