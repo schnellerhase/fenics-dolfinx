@@ -108,7 +108,7 @@ jobs:
         run: python3 -m pip install matplotlib numba pytest pytest-xdist scipy
 
       - name: Run poisson demo
-        run: python3 dolfinx/python/demo/demo_poisson.py
+        run: python3 python/demo/demo_poisson.py
 
       # - name: Run demos (Python, serial)
       #   run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
