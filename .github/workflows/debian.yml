@@ -46,22 +46,22 @@ jobs:
 
       - name: Create venv
         run: |
-          VIRTUAL_ENV=/dolfinx-venv
-          sudo python3 -m venv $VIRTUAL_ENV
+          VIRTUAL_ENV=./dolfinx-venv
+          python3 -m venv $VIRTUAL_ENV
           # PATH="$VIRTUAL_ENV/bin:$PATH"
           source $VIRTUAL_ENV/bin/activate 
           echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
           echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
 
       - name: Install Python dependencies
-        run: sudo pip install mpi4py petsc4py nanobind scikit-build-core[pyproject] --upgrade
+        run: pip install mpi4py petsc4py nanobind scikit-build-core[pyproject] --upgrade
 
       - name: Install FEniCS Python components
         run: |
-          sudo pip install --no-cache-dir --upgrade pip setuptools
-          sudo pip install git+https://github.com/FEniCS/ufl.git
-          sudo pip install git+https://github.com/FEniCS/basix.git
-          sudo pip install git+https://github.com/FEniCS/ffcx.git
+          pip install --no-cache-dir --upgrade pip setuptools
+          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
