@@ -49,7 +49,10 @@ opts = PETSc.Options()
 opts["ksp_type"] = "preonly"
 opts["ksp_monitor"] = ""
 opts["ksp_view"] = ""
-opts["pc_type"] = "gamg"
+opts["pc_type"] = "mg"
+
+## TODO: mg should be the correct PC
+
 
 opts["pc_mg_cycle_type"] = "w"
 opts["pc_mg_levels"] = "2"
