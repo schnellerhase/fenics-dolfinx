@@ -10,11 +10,8 @@ from dolfinx import fem, io, mesh
 comm = MPI.COMM_WORLD
 
 np.set_printoptions(threshold=np.inf, linewidth=np.inf)
-n_coarse = 2
-n_fine = 4
-
-# n_coarse = 16
-# n_fine = 32
+n_coarse = 16 # 16
+n_fine = 2*n_coarse
 
 assert 2 * n_coarse == n_fine, "Require exact containment"
 
@@ -43,16 +40,16 @@ assert dofs_coarse == V_coarse.dofmap.index_map.size_global, "Not parallel ready
 assert dofs_fine == V_fine.dofmap.index_map.size_global, "Not parallel ready"
 
 # TODO: make sparse
-# P = np.zeros((n_fine + 1, n_coarse+1))
-# for i in range(n_fine + 1):
-#     if i % 2 == 0:
-#         P[i, int(i / 2)] = 1
-#     else:
-#         P[i, math.floor(i / 2)] = 0.5
-#         P[i, math.ceil(i / 2)] = 0.5
+P = np.zeros((n_fine + 1, n_coarse+1))
+for i in range(n_fine + 1):
+    if i % 2 == 0:
+        P[i, int(i / 2)] = 1
+    else:
+        P[i, math.floor(i / 2)] = 0.5
+        P[i, math.ceil(i / 2)] = 0.5
 
 # # P = 1/4 * P
-# P = np.kron(P, P)
+P_1 = np.kron(P, P)
 # print(P)
 
 
@@ -87,6 +84,8 @@ for ix in range(n_coarse+1):
 
         if (fine_ix < n_fine and fine_iy < n_fine):
             P[(fine_ix+1) + (n_fine+1) * (fine_iy+1), flat_coarse] = .25
+
+assert(np.equal(P_1, P).all())
 
 print(P)
 
