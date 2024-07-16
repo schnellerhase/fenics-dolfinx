@@ -16,6 +16,16 @@
 /// Generic tools
 namespace dolfinx::common
 {
+
+template <std::ranges::random_access_range R>
+void sort_unique(R&& range)
+{
+  std::ranges::sort(range);
+  auto [end_unique, range_end] = std::ranges::unique(range);
+  range.erase(end_unique, range_end);
+}
+
+
 ///@brief Sort two arrays based on the values in array `indices`.
 ///
 /// Any duplicate indices and the corresponding value are removed. In
