@@ -19,14 +19,22 @@
 namespace dolfinx::common
 {
 
-template <std::ranges::random_access_range R, std::invocable<R> F = std::ranges::__sort_fn>
+/// @brief Sorts and uniquifies a (random access) range.
+///
+/// Any duplicates are therefore removed and the range is transformed into an
+/// ordered state.
+///
+/// @param[in] range Range to be sorted and uniquified
+/// @param[in] sort Sorting algorithm to be used, defaults to std::ranges::sort
+/// but dolfinx::radix_sort is also supported
+template <std::ranges::random_access_range R,
+          std::invocable<R> F = std::ranges::__sort_fn>
 void sort_unique(R&& range, F sort = std::ranges::sort)
 {
   sort(range);
   auto [end_unique, range_end] = std::ranges::unique(range);
   range.erase(end_unique, range_end);
 }
-
 
 ///@brief Sort two arrays based on the values in array `indices`.
 ///
