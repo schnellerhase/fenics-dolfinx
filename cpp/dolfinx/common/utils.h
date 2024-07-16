@@ -8,7 +8,9 @@
 
 #include "MPI.h"
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <boost/functional/hash.hpp>
+#include <concepts>
 #include <mpi.h>
 #include <utility>
 #include <vector>
@@ -17,10 +19,10 @@
 namespace dolfinx::common
 {
 
-template <std::ranges::random_access_range R>
-void sort_unique(R&& range)
+template <std::ranges::random_access_range R, std::invocable<R> F = std::ranges::__sort_fn>
+void sort_unique(R&& range, F sort = std::ranges::sort)
 {
-  std::ranges::sort(range);
+  sort(range);
   auto [end_unique, range_end] = std::ranges::unique(range);
   range.erase(end_unique, range_end);
 }
