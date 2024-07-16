@@ -6,6 +6,7 @@
 
 #include "DofMap.h"
 #include "ElementDofLayout.h"
+#include "common/utils.h"
 #include "dofmapbuilder.h"
 #include "utils.h"
 #include <cstdint>
@@ -46,9 +47,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::vector<std::int32_t> dofs_view(dofs_view_md.data_handle(),
                                       dofs_view_md.data_handle()
                                           + dofs_view_md.size());
-  dolfinx::radix_sort(std::span(dofs_view));
-  dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
-                  dofs_view.end());
+  common::sort_unique(dofs_view, dolfinx::radix_sort);
 
   // Get block size
   int bs_view = dofmap_view.index_map_bs();

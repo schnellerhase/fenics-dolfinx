@@ -581,8 +581,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   // Create unique list of ranks that share edges (owners of ghosts
   // plus ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::ranges::sort(ranks);
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  common::sort_unique(ranks);
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
   std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),
@@ -647,8 +646,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   // Create unique list of ranks that share edges (owners of ghosts plus
   // ranks that ghost owned indices)
   std::vector<int> ranks(edge_ranks.array().begin(), edge_ranks.array().end());
-  std::ranges::sort(ranks);
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+  common::sort_unique(ranks);
 
   // Convert edge_ranks from global rank to to neighbourhood ranks
   std::ranges::transform(edge_ranks.array(), edge_ranks.array().begin(),

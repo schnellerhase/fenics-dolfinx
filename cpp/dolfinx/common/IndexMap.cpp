@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "IndexMap.h"
+#include "dolfinx/common/utils.h"
 #include "sort.h"
 #include <algorithm>
 #include <cstdint>
@@ -36,8 +37,8 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   }
 
   std::vector<int> src(owners.begin(), owners.end());
-  std::ranges::sort(src);
-  src.erase(std::unique(src.begin(), src.end()), src.end());
+  sort_unique(src);
+
   src.shrink_to_fit();
   std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
   std::ranges::sort(dest);
@@ -337,9 +338,7 @@ compute_submap_indices(const IndexMap& imap,
   // Get submap source ranks
   std::vector<int> submap_src(submap_ghost_owners.begin(),
                               submap_ghost_owners.end());
-  std::ranges::sort(submap_src);
-  submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
-                   submap_src.end());
+  common::sort_unique(submap_src);
   submap_src.shrink_to_fit();
 
   // If required, preserve the order of the ghost indices
@@ -551,9 +550,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   dolfinx::MPI::check_error(map.comm(), ierr);
 
   // Remove duplicates from received indices
-  std::ranges::sort(recv_buffer);
-  recv_buffer.erase(std::unique(recv_buffer.begin(), recv_buffer.end()),
-                    recv_buffer.end());
+  common::sort_unique(recv_buffer);
 
   // Copy owned and ghost indices into return array
   std::vector<std::int32_t> owned;
@@ -567,9 +564,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                            return idx - range[0];
                          });
 
-  std::ranges::sort(owned);
-  owned.erase(std::unique(owned.begin(), owned.end()), owned.end());
-
+  common::sort_unique(owned);
   return owned;
 }
 //-----------------------------------------------------------------------------
@@ -939,8 +934,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
 
   // Build lists of src and dest ranks
   std::vector<int> src = _owners;
-  std::ranges::sort(src);
-  src.erase(std::unique(src.begin(), src.end()), src.end());
+  common::sort_unique(src);
   auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
   std::ranges::sort(dest);
 
@@ -1217,9 +1211,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
                          });
 
   // Sort and remove duplicates
-  std::ranges::sort(shared);
-  shared.erase(std::unique(shared.begin(), shared.end()), shared.end());
-
+  common::sort_unique(shared);
   return shared;
 }
 //-----------------------------------------------------------------------------

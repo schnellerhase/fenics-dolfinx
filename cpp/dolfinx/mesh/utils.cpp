@@ -137,9 +137,7 @@ mesh::compute_incident_entities(const Topology& topology,
     entities1.insert(entities1.end(), e.begin(), e.end());
   }
 
-  std::ranges::sort(entities1);
-  entities1.erase(std::unique(entities1.begin(), entities1.end()),
-                  entities1.end());
+  common::sort_unique(entities1);
   return entities1;
 }
 //-----------------------------------------------------------------------------

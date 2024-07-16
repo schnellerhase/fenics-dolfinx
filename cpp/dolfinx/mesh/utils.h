@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <basix/mdspan.hpp>
 #include <concepts>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <dolfinx/graph/partition.h>
@@ -104,12 +105,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     }
 
     // Build vector of boundary vertices
-    std::ranges::sort(vertices);
-    vertices.erase(std::unique(vertices.begin(), vertices.end()),
-                   vertices.end());
-    std::ranges::sort(entities);
-    entities.erase(std::unique(entities.begin(), entities.end()),
-                   entities.end());
+    common::sort_unique(vertices);
+    common::sort_unique(entities);
   }
 
   // Get geometry data
@@ -869,9 +866,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
-    std::ranges::sort(boundary_v);
-    boundary_v.erase(std::unique(boundary_v.begin(), boundary_v.end()),
-                     boundary_v.end());
+    common::sort_unique(boundary_v);
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed
     // topology)
@@ -894,8 +889,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // Build list of unique (global) node indices from cells1 and
   // distribute coordinate data
   std::vector<std::int64_t> nodes1 = cells1;
-  dolfinx::radix_sort(std::span(nodes1));
-  nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
+    common::sort_unique(nodes1, dolfinx::radix_sort);
+
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
@@ -1073,9 +1068,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Boundary vertices are marked as 'unknown'
     boundary_v = unmatched_facets;
-    std::ranges::sort(boundary_v);
-    boundary_v.erase(std::unique(boundary_v.begin(), boundary_v.end()),
-                     boundary_v.end());
+    common::sort_unique(boundary_v);
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed
     // topology)
@@ -1120,8 +1113,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   for (std::vector<std::int64_t>& c : cells1)
     nodes2.insert(nodes2.end(), c.begin(), c.end());
 
-  dolfinx::radix_sort(std::span(nodes1));
-  nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
+  common::sort_unique(nodes1, dolfinx::radix_sort);
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
@@ -1193,9 +1185,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
       = entities_to_geometry(mesh, dim, subentity_to_entity, true);
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
-  std::ranges::sort(sub_x_dofs);
-  sub_x_dofs.erase(std::unique(sub_x_dofs.begin(), sub_x_dofs.end()),
-                   sub_x_dofs.end());
+  common::sort_unique(sub_x_dofs);
 
   // Get the sub-geometry dofs owned by this process
   auto x_index_map = geometry.index_map();

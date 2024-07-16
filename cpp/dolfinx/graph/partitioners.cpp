@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/utils.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -81,9 +82,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
             {rank, node1, static_cast<std::int64_t>(part[node0])});
     }
   }
-  std::ranges::sort(node_to_dest);
-  node_to_dest.erase(std::unique(node_to_dest.begin(), node_to_dest.end()),
-                     node_to_dest.end());
+  common::sort_unique(node_to_dest);
 
   // Build send data and buffer
   std::vector<int> dest, send_sizes;
@@ -164,10 +163,8 @@ graph::AdjacencyList<int> compute_destination_ranks(
     std::int32_t idx_local = idx - range0;
     local_node_to_dest.push_back({idx_local, d});
   }
-  std::ranges::sort(local_node_to_dest);
-  local_node_to_dest.erase(
-      std::unique(local_node_to_dest.begin(), local_node_to_dest.end()),
-      local_node_to_dest.end());
+
+  common::sort_unique(local_node_to_dest);
 
   // Compute offsets
   std::vector<std::int32_t> offsets(graph.num_nodes() + 1, 0);

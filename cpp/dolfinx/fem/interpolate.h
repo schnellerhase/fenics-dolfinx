@@ -16,6 +16,7 @@
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
@@ -175,8 +176,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                [](auto rank) { return rank >= 0; });
 
   // Create unique set of sorted in-ranks
-  std::ranges::sort(in_ranks);
-  in_ranks.erase(std::unique(in_ranks.begin(), in_ranks.end()), in_ranks.end());
+  common::sort_unique(in_ranks);
   in_ranks.reserve(in_ranks.size() + 1);
 
   // Create neighborhood communicator

@@ -11,6 +11,7 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -248,8 +249,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
-  std::ranges::sort(dofs);
-  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+  common::sort_unique(dofs);
 
   if (remote)
   {
@@ -283,8 +283,7 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // Add received bc indices to dofs_local, sort, and remove
     // duplicates
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
-    std::ranges::sort(dofs);
-    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+    common::sort_unique(dofs);
   }
 
   return dofs;

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -98,10 +99,7 @@ int main(int argc, char* argv[])
     boundary_vertices.push_back(ny + (ny + 1) * i);
   }
 
-  std::ranges::sort(boundary_vertices);
-  boundary_vertices.erase(
-      std::unique(boundary_vertices.begin(), boundary_vertices.end()),
-      boundary_vertices.end());
+  common::sort_unique(boundary_vertices);
 
   std::vector<mesh::CellType> cell_types{mesh::CellType::quadrilateral,
                                          mesh::CellType::triangle};

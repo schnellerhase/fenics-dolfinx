@@ -15,6 +15,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
+#include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <numeric>
@@ -39,8 +40,7 @@ namespace
 template <typename U>
 graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
 {
-  std::ranges::sort(data);
-  data.erase(std::unique(data.begin(), data.end()), data.end());
+  common::sort_unique(data);
 
   std::vector<int> array;
   array.reserve(data.size());
@@ -129,8 +129,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
   // Create unique list of ranks that share vertices (owners of)
   std::vector<int> ranks(vertex_ranks.array().begin(),
                          vertex_ranks.array().end());
-  std::ranges::sort(ranks);
-  ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
+
+  common::sort_unique(ranks);
 
   MPI_Comm neighbor_comm;
   MPI_Dist_graph_create_adjacent(

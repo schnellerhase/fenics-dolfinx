@@ -10,6 +10,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/utils.h>
 #include <numeric>
 #include <set>
 #include <vector>
@@ -144,9 +145,8 @@ void test_consensus_exchange()
 
   // Create an IndexMap
   std::vector<int> src_ranks = global_ghost_owner;
+  common::sort_unique(src_ranks);
   std::ranges::sort(src_ranks);
-  src_ranks.erase(std::unique(src_ranks.begin(), src_ranks.end()),
-                  src_ranks.end());
 
   auto dest_ranks0
       = dolfinx::MPI::compute_graph_edges_nbx(MPI_COMM_WORLD, src_ranks);
