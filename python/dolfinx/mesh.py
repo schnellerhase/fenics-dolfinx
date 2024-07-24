@@ -385,12 +385,9 @@ def refine_plaza(
     Returns:
        Refined mesh, list of parent cell for each refine cell, and list
     """
-    if edges is None:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute, option)
-    else:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(
-            mesh._cpp_object, edges, redistribute, option
-        )
+    mesh1, cells, facets = _cpp.refinement.refine_plaza(
+        mesh._cpp_object, edges, redistribute, option
+    )
     return Mesh(mesh1, mesh._ufl_domain), cells, facets
 
 

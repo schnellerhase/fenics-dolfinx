@@ -38,10 +38,7 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
   }
 
   auto [refined_mesh, parent_cell, parent_facet]
-      = edges.has_value()
-            ? plaza::refine(mesh, edges.value(), redistribute,
-                            plaza::Option::none)
-            : plaza::refine(mesh, redistribute, plaza::Option::none);
+      = plaza::refine(mesh, edges, redistribute, plaza::Option::none);
 
   // Report the number of refined cellse
   const int D = topology->dim();

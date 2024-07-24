@@ -4,20 +4,25 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "array.h"
 #include <concepts>
+#include <optional>
+#include <span>
+
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/vector.h>
+
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/utils.h>
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/shared_ptr.h>
-#include <nanobind/stl/tuple.h>
-#include <nanobind/stl/vector.h>
-#include <optional>
+
+#include "array.h"
 
 namespace nb = nanobind;
 
@@ -76,29 +81,23 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
 
   m.def(
       "refine_plaza",
-      [](const dolfinx::mesh::Mesh<T>& mesh0, bool redistribute,
-         dolfinx::refinement::plaza::Option option)
-      {
-        auto [mesh1, cell, facet]
-            = dolfinx::refinement::plaza::refine(mesh0, redistribute, option);
-        return std::tuple{std::move(mesh1), as_nbarray(std::move(cell)),
-                          as_nbarray(std::move(facet))};
-      },
-      nb::arg("mesh"), nb::arg("redistribute"), nb::arg("option"));
-
-  m.def(
-      "refine_plaza",
       [](const dolfinx::mesh::Mesh<T>& mesh0,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> edges,
+         std::optional<
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
+             edges,
          bool redistribute, dolfinx::refinement::plaza::Option option)
       {
+        std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
+        if (edges.has_value())
+          cpp_edges.emplace(
+              std::span(edges.value().data(), edges.value().size()));
+
         auto [mesh1, cell, facet] = dolfinx::refinement::plaza::refine(
-            mesh0, std::span<const std::int32_t>(edges.data(), edges.size()),
-            redistribute, option);
+            mesh0, cpp_edges, redistribute, option);
         return std::tuple{std::move(mesh1), as_nbarray(std::move(cell)),
                           as_nbarray(std::move(facet))};
       },
-      nb::arg("mesh"), nb::arg("edges"), nb::arg("redistribute"),
+      nb::arg("mesh"), nb::arg("edges") = nb::none(), nb::arg("redistribute"),
       nb::arg("option"));
 }
 
