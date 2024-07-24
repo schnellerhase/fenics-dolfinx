@@ -27,10 +27,13 @@ namespace dolfinx_wrappers
 template <std::floating_point T>
 void export_refinement_with_variable_mesh_type(nb::module_& m)
 {
-  m.def("refine",
-        nb::overload_cast<const dolfinx::mesh::Mesh<T>&, bool>(
-            &dolfinx::refinement::refine<T>),
-        nb::arg("mesh"), nb::arg("redistribute") = true);
+  // TODO: python interface!
+  m.def(
+      "refine",
+      [](const dolfinx::mesh::Mesh<T>& mesh, bool redistribute) {
+        return dolfinx::refinement::refine<T>(mesh, std::nullopt, redistribute);
+      },
+      nb::arg("mesh"), nb::arg("redistribute") = true);
   m.def(
       "refine",
       [](const dolfinx::mesh::Mesh<T>& mesh,
@@ -47,8 +50,9 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
       [](const dolfinx::mesh::Mesh<T>& mesh, bool redistribute,
          dolfinx::mesh::GhostMode ghost_mode)
       {
-        auto [mesh_refined, parent_cells] = dolfinx::refinement::refine_interval(
-            mesh, std::nullopt, redistribute, ghost_mode);
+        auto [mesh_refined, parent_cells]
+            = dolfinx::refinement::refine_interval(mesh, std::nullopt,
+                                                   redistribute, ghost_mode);
         return std::tuple(std::move(mesh_refined),
                           as_nbarray(std::move(parent_cells)));
       },
