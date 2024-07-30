@@ -56,7 +56,7 @@ TEST_CASE("Interval uniform refinement", "refinement,interval,uniform")
 
   // TODO: parent_facet
   auto [refined_mesh, parent_edge, parent_facet]
-      = refinement::refine_interval(mesh, std::nullopt, false);
+      = refinement::refine(mesh, std::nullopt, false);
 
   // Check geometry
   {
@@ -134,7 +134,7 @@ TEST_CASE("Interval adaptive refinement", "refinement,interval,adaptive")
   std::vector<std::int32_t> edges{1};
   // TODO: parent_facet
   auto [refined_mesh, parent_edge, parent_facet]
-      = refinement::refine_interval(mesh, std::span(edges), false);
+      = refinement::refine(mesh, std::span(edges), false);
 
   // Check geometry
   {
@@ -243,7 +243,7 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
   {
     // TODO: parent_facet
     auto [refined_mesh, parent_edges, parent_facet]
-        = refinement::refine_interval(mesh, std::nullopt, false);
+        = refinement::refine(mesh, std::nullopt, false);
 
     // Check geometry
     {

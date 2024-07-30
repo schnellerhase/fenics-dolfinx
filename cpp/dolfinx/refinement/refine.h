@@ -8,33 +8,67 @@
 
 #include <algorithm>
 
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <functional>
+#include <utility>
 
 #include "interval.h"
 #include "plaza.h"
+#include <dolfinx/mesh/utils.h>
 
 namespace dolfinx::refinement
 {
-/// @brief Create a locally refined mesh.
-///
-/// @param[in] mesh Mesh to create a new, refined mesh from.
-/// @param[in] edges Indices of the edges that should be split during
-/// refinement. mesh::compute_incident_entities can be used to compute
-/// the edges that are incident to other entities, e.g. incident to
-/// cells.
-/// @param[in] redistribute If `true` refined mesh is re-partitioned
-/// across MPI ranks.
-/// @return Refined mesh.
+
+namespace
+{
+
 template <std::floating_point T>
-mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
-                     std::optional<std::span<const std::int32_t>> edges,
-                     bool redistribute = true,
-                     dolfinx::mesh::GhostMode ghost_mode
-                     = mesh::GhostMode::shared_facet)
+mesh::Mesh<T>
+create_refined_mesh(const mesh::Mesh<T>& mesh,
+                    const graph::AdjacencyList<std::int64_t>& cell_adj,
+                    const std::vector<T>& new_vertex_coords,
+                    std::array<std::size_t, 2> xshape, bool redistribute,
+                    mesh::GhostMode ghost_mode)
+{
+  if (dolfinx::MPI::size(mesh.comm()) == 1)
+  {
+    // no parallel construction necessary, i.e. redistribute also has no effect.
+    return mesh::create_mesh(mesh.comm(), cell_adj.array(),
+                             mesh.geometry().cmap(), new_vertex_coords, xshape,
+                             ghost_mode);
+  }
+  else
+  {
+    // Build mesh
+    return partition<T>(mesh, cell_adj, new_vertex_coords, xshape, redistribute,
+                        ghost_mode);
+  }
+}
+} // namespace
+
+/// @brief Refine with markers, optionally redistributing, and
+/// optionally calculating the parent-child relationships.
+///
+/// @param[in] mesh Input mesh to be refined
+/// @param[in] edges Optional indices of the edges that should be split by this
+/// refinement, if optional is not set, a uniform refinement is performend, same
+/// behavior as passing a list of all indices.
+/// @param[in] redistribute Flag to call the Mesh Partitioner to
+/// redistribute after refinement
+/// @param[in] option Control the computation of parent facets, parent
+/// cells. If an option is unselected, an empty list is returned.
+/// @return New Mesh and optional parent cell index, parent facet indices
+template <std::floating_point T>
+std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
+refine(const mesh::Mesh<T>& mesh,
+       std::optional<std::span<const std::int32_t>> edges, bool redistribute,
+       mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet,
+       Option option = Option::none)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -46,15 +80,13 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
 
   bool oned = topology->cell_type() == mesh::CellType::interval;
 
-  auto get_mesh = [&]()
-  {
-    if (oned)
-      return std::get<0>(refine_interval(mesh, edges, redistribute));
-    else
-      return std::get<0>(
-          plaza::refine(mesh, edges, redistribute, ghost_mode, Option::none));
-  };
-  mesh::Mesh<T> refined_mesh = get_mesh();
+  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
+      = oned ? impl::compute_interval_refinement(mesh, edges)
+             : plaza::compute_refinement_data(mesh, edges, option);
+
+  mesh::Mesh<T> refined_mesh = create_refined_mesh(
+      mesh, std::move(cell_adj), std::move(new_vertex_coords), xshape,
+      redistribute, ghost_mode);
 
   // Report the number of refined cellse
   const int D = topology->dim();
@@ -64,7 +96,7 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
       "Number of cells increased from {} to {} ({}% increase).", n0, n1,
       100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
-  return refined_mesh;
+  return {refined_mesh, std::move(parent_cell), std::move(parent_facet)};
 }
 
 } // namespace dolfinx::refinement
