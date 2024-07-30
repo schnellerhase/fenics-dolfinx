@@ -293,8 +293,7 @@ compute_refinement(MPI_Comm neighbor_comm,
                    const graph::AdjacencyList<int>& shared_edges,
                    const mesh::Mesh<T>& mesh,
                    std::span<const std::int32_t> long_edge,
-                   std::span<const std::int8_t> edge_ratio_ok,
-                   Option option)
+                   std::span<const std::int8_t> edge_ratio_ok, Option option)
 {
   int tdim = mesh.topology()->dim();
   int num_cell_edges = tdim * 3 - 3;
@@ -552,7 +551,8 @@ template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges, bool redistribute,
-       Option option)
+       mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet,
+       Option option = Option::none)
 {
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement_data(mesh, edges, option);
@@ -576,10 +576,6 @@ refine(const mesh::Mesh<T>& mesh,
                   mesh.comm());
 
     // Build mesh
-    const mesh::GhostMode ghost_mode = max_ghost_cells == 0
-                                           ? mesh::GhostMode::none
-                                           : mesh::GhostMode::shared_facet;
-
     return {partition<T>(mesh, cell_adj, new_vertex_coords, xshape,
                          redistribute, ghost_mode),
             std::move(parent_cell), std::move(parent_facet)};

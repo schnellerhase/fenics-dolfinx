@@ -86,7 +86,8 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
-         bool redistribute, dolfinx::refinement::Option option)
+         bool redistribute, dolfinx::mesh::GhostMode ghost_mode,
+         dolfinx::refinement::Option option)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
@@ -94,12 +95,12 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
               std::span(edges.value().data(), edges.value().size()));
 
         auto [mesh1, cell, facet] = dolfinx::refinement::plaza::refine(
-            mesh0, cpp_edges, redistribute, option);
+            mesh0, cpp_edges, redistribute, ghost_mode, option);
         return std::tuple{std::move(mesh1), as_nbarray(std::move(cell)),
                           as_nbarray(std::move(facet))};
       },
       nb::arg("mesh"), nb::arg("edges") = nb::none(), nb::arg("redistribute"),
-      nb::arg("option"));
+      nb::arg("ghost_mode"), nb::arg("option"));
 }
 
 void refinement(nb::module_& m)

@@ -27,7 +27,9 @@ namespace dolfinx::refinement
 template <std::floating_point T>
 mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
                      std::optional<std::span<const std::int32_t>> edges,
-                     bool redistribute = true)
+                     bool redistribute = true,
+                     dolfinx::mesh::GhostMode ghost_mode
+                     = mesh::GhostMode::shared_facet)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -38,7 +40,7 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
   }
 
   auto [refined_mesh, parent_cell, parent_facet]
-      = plaza::refine(mesh, edges, redistribute, Option::none);
+      = plaza::refine(mesh, edges, redistribute, ghost_mode, Option::none);
 
   // Report the number of refined cellse
   const int D = topology->dim();
