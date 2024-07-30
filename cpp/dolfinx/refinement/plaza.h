@@ -535,41 +535,4 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
           std::move(parent_cell), std::move(parent_facet)};
 }
 
-/// @brief Refine with markers, optionally redistributing, and
-/// optionally calculating the parent-child relationships.
-///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] edges Optional indices of the edges that should be split by this
-/// refinement, if optional is not set, a uniform refinement is performend, same
-/// behavior as passing a list of all indices.
-/// @param[in] redistribute Flag to call the Mesh Partitioner to
-/// redistribute after refinement
-/// @param[in] option Control the computation of parent facets, parent
-/// cells. If an option is unselected, an empty list is returned.
-/// @return New Mesh and optional parent cell index, parent facet indices
-template <std::floating_point T>
-std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh<T>& mesh,
-       std::optional<std::span<const std::int32_t>> edges, bool redistribute,
-       mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet,
-       Option option = Option::none)
-{
-  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, edges, option);
-
-  if (dolfinx::MPI::size(mesh.comm()) == 1)
-  {
-    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                              mesh.geometry().cmap(), new_vertex_coords, xshape,
-                              mesh::GhostMode::none),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-  else
-  {
-    // Build mesh
-    return {partition<T>(mesh, cell_adj, new_vertex_coords, xshape,
-                         redistribute, ghost_mode),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-}
 } // namespace dolfinx::refinement::plaza
