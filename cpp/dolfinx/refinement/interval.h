@@ -7,20 +7,18 @@
 #pragma once
 
 #include <algorithm>
-#include <cstddef>
-#include <mpi.h>
-
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
 #include <vector>
 
+#include <mpi.h>
+
 #include "dolfinx/mesh/Mesh.h"
-#include "dolfinx/mesh/cell_types.h"
-#include "dolfinx/mesh/utils.h"
+#include "dolfinx/refinement/option.h"
 #include "dolfinx/refinement/utils.h"
-#include "dolfinx/refinement/plaza.h"
 
 namespace dolfinx::refinement
 {
@@ -37,11 +35,18 @@ namespace interval
 /// cell indices.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>, std::vector<std::int8_t>>
+           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
-                            std::optional<std::span<const std::int32_t>> cells)
+                        std::optional<std::span<const std::int32_t>> cells,
+                        Option option)
 {
-  // TODO: option
+  bool compute_parent_facet = option_parent_facet(option);
+  bool compute_parent_cell = option_parent_cell(option);
+
+  if (compute_parent_facet)
+    throw std::runtime_error("Parent facet computation not yet supported!");
+
   auto topology = mesh.topology();
   assert(topology);
   assert(topology->dim() == 1);
@@ -131,7 +136,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   cell_topology.reserve(refined_cell_count * 2);
 
   std::vector<std::int32_t> parent_cell;
-  parent_cell.reserve(refined_cell_count);
+  if (compute_parent_cell)
+    parent_cell.reserve(refined_cell_count);
 
   for (std::int32_t cell = 0; cell < map_c->size_local(); ++cell)
   {
@@ -153,18 +159,22 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
       // Add new cells/edges to refined topology
       cell_topology.insert(cell_topology.end(), {a, c, c, b});
-      parent_cell.insert(parent_cell.end(), {cell, cell});
+
+      if (compute_parent_cell)
+        parent_cell.insert(parent_cell.end(), {cell, cell});
     }
     else
     {
       // Copy the previous cell
       cell_topology.insert(cell_topology.end(), {a, b});
-      parent_cell.push_back(cell);
+
+      if (compute_parent_cell)
+        parent_cell.push_back(cell);
     }
   }
 
   assert(cell_topology.size() == refined_cell_count * 2);
-  assert(parent_cell.size() == refined_cell_count);
+  assert(parent_cell.size() == (compute_parent_cell ? refined_cell_count : 0));
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });

@@ -81,7 +81,7 @@ refine(const mesh::Mesh<T>& mesh,
   bool oned = topology->cell_type() == mesh::CellType::interval;
 
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = oned ? interval::compute_refinement_data(mesh, edges)
+      = oned ? interval::compute_refinement_data(mesh, edges, option)
              : plaza::compute_refinement_data(mesh, edges, option);
 
   mesh::Mesh<T> refined_mesh = create_refined_mesh(
