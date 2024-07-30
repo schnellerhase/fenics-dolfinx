@@ -316,7 +316,7 @@ def refine(
     redistribute: bool = True,
     ghost_mode: GhostMode = GhostMode.shared_facet,
     option: RefinementOption = RefinementOption.none,
-) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArra[np.int8]]:
+) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
 
     Args:
