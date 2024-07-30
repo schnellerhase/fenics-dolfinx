@@ -4,23 +4,22 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "utils.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/utils.h>
 #include <optional>
 #include <span>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "dolfinx/graph/AdjacencyList.h"
+#include "dolfinx/mesh/Mesh.h"
+#include "dolfinx/mesh/Topology.h"
+#include "dolfinx/mesh/utils.h"
+
 #include "option.h"
+#include "utils.h"
 
 #pragma once
 

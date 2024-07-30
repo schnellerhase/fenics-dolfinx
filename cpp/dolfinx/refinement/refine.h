@@ -7,19 +7,16 @@
 #pragma once
 
 #include <algorithm>
-
-#include <concepts>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/cell_types.h>
-#include <functional>
 #include <utility>
+#include <concepts>
+
+#include "dolfinx/mesh/Mesh.h"
+#include "dolfinx/mesh/Topology.h"
+#include "dolfinx/mesh/cell_types.h"
+#include "dolfinx/mesh/utils.h"
 
 #include "interval.h"
 #include "plaza.h"
-#include <dolfinx/mesh/utils.h>
 
 namespace dolfinx::refinement
 {
