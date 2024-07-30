@@ -6,11 +6,16 @@
 
 #pragma once
 
-#include "plaza.h"
+#include <algorithm>
+
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/cell_types.h>
+
+#include "interval.h"
+#include "plaza.h"
 
 namespace dolfinx::refinement
 {
@@ -33,14 +38,23 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
 {
   auto topology = mesh.topology();
   assert(topology);
-  if (topology->cell_type() != mesh::CellType::triangle
-      and topology->cell_type() != mesh::CellType::tetrahedron)
-  {
-    throw std::runtime_error("Refinement only defined for simplices");
-  }
 
-  auto [refined_mesh, parent_cell, parent_facet]
-      = plaza::refine(mesh, edges, redistribute, ghost_mode, Option::none);
+  mesh::CellType cell_t = topology->cell_type();
+  if (cell_t != mesh::CellType::interval and cell_t != mesh::CellType::triangle
+      and cell_t != mesh::CellType::tetrahedron)
+    throw std::runtime_error("Refinement only defined for simplices");
+
+  bool oned = topology->cell_type() == mesh::CellType::interval;
+
+  auto get_mesh = [&]()
+  {
+    if (oned)
+      return std::get<0>(refine_interval(mesh, edges, redistribute));
+    else
+      return std::get<0>(
+          plaza::refine(mesh, edges, redistribute, ghost_mode, Option::none));
+  };
+  mesh::Mesh<T> refined_mesh = get_mesh();
 
   // Report the number of refined cellse
   const int D = topology->dim();

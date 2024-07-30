@@ -566,15 +566,6 @@ refine(const mesh::Mesh<T>& mesh,
   }
   else
   {
-    std::shared_ptr<const common::IndexMap> map_c
-        = mesh.topology()->index_map(mesh.topology()->dim());
-    const int num_ghost_cells = map_c->num_ghosts();
-    // Check if mesh has ghost cells on any rank
-    // FIXME: this is not a robust test. Should be user option.
-    int max_ghost_cells = 0;
-    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                  mesh.comm());
-
     // Build mesh
     return {partition<T>(mesh, cell_adj, new_vertex_coords, xshape,
                          redistribute, ghost_mode),
