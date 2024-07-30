@@ -21,6 +21,7 @@
 #include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/refinement/utils.h>
+#include <dolfinx/refinement/option.h>
 
 #include "array.h"
 
@@ -85,7 +86,7 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
          std::optional<
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>
              edges,
-         bool redistribute, dolfinx::refinement::plaza::Option option)
+         bool redistribute, dolfinx::refinement::Option option)
       {
         std::optional<std::span<const std::int32_t>> cpp_edges(std::nullopt);
         if (edges.has_value())
@@ -103,15 +104,15 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
 
 void refinement(nb::module_& m)
 {
-  export_refinement_with_variable_mesh_type<float>(m);
+  // export_refinement_with_variable_mesh_type<float>(m);
   export_refinement_with_variable_mesh_type<double>(m);
 
-  nb::enum_<dolfinx::refinement::plaza::Option>(m, "RefinementOption")
-      .value("none", dolfinx::refinement::plaza::Option::none)
-      .value("parent_facet", dolfinx::refinement::plaza::Option::parent_facet)
-      .value("parent_cell", dolfinx::refinement::plaza::Option::parent_cell)
-      .value("parent_cell_and_facet",
-             dolfinx::refinement::plaza::Option::parent_cell_and_facet);
+  nb::enum_<dolfinx::refinement::Option>(m, "RefinementOption")
+      .value("none", dolfinx::refinement::Option::none)
+      .value("parent_facet", dolfinx::refinement::Option::parent_facet)
+      .value("parent_cell", dolfinx::refinement::Option::parent_cell)
+      .value("parent_cell_and_facet", // TODO!!!
+             dolfinx::refinement::Option::parent_cell_and_facet);
   m.def(
       "transfer_facet_meshtag",
       [](const dolfinx::mesh::MeshTags<std::int32_t>& parent_meshtag,

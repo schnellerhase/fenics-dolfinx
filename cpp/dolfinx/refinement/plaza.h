@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "option.h"
+
 #pragma once
 
 /// @brief Plaza mesh refinement.
@@ -29,18 +31,6 @@
 /// Applied Numerical Mathematics 32 (2000), 195-218.
 namespace dolfinx::refinement::plaza
 {
-
-/// @brief Options for data to compute during mesh refinement.
-enum class Option : int
-{
-  none = 0, /*!< No extra data */
-  parent_cell
-  = 1, /*!< Compute list with the parent cell index for each new cell  */
-  parent_facet
-  = 2, /*!< Compute list of the cell-local facet indices in the parent cell of
-          each facet in each new cell (or -1 if no match) */
-  parent_cell_and_facet = 3 /*!< Both cell and facet parent data */
-};
 
 namespace impl
 {
@@ -304,15 +294,14 @@ compute_refinement(MPI_Comm neighbor_comm,
                    const mesh::Mesh<T>& mesh,
                    std::span<const std::int32_t> long_edge,
                    std::span<const std::int8_t> edge_ratio_ok,
-                   plaza::Option option)
+                   Option option)
 {
   int tdim = mesh.topology()->dim();
   int num_cell_edges = tdim * 3 - 3;
   int num_cell_vertices = tdim + 1;
-  bool compute_facets = option == plaza::Option::parent_facet
-                        or option == plaza::Option::parent_cell_and_facet;
-  bool compute_parent_cell = option == plaza::Option::parent_cell
-                             or option == plaza::Option::parent_cell_and_facet;
+
+  bool compute_facets = option_parent_facet(option);
+  bool compute_parent_cell = option_parent_cell(option);
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coords, xshape]
@@ -455,56 +444,6 @@ compute_refinement(MPI_Comm neighbor_comm,
 }
 } // namespace impl
 
-/// @brief Refine with markers, optionally redistributing, and
-/// optionally calculating the parent-child relationships.
-///
-/// @param[in] mesh Input mesh to be refined
-/// @param[in] edges Optional indices of the edges that should be split by this
-/// refinement, if optional is not set, a uniform refinement is performend, same
-/// behavior as passing a list of all indices.
-/// @param[in] redistribute Flag to call the Mesh Partitioner to
-/// redistribute after refinement
-/// @param[in] option Control the computation of parent facets, parent
-/// cells. If an option is unselected, an empty list is returned.
-/// @return New Mesh and optional parent cell index, parent facet indices
-template <std::floating_point T>
-std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
-refine(const mesh::Mesh<T>& mesh,
-       std::optional<std::span<const std::int32_t>> edges, bool redistribute,
-       Option option)
-{
-  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
-      = compute_refinement_data(mesh, edges, option);
-
-  if (dolfinx::MPI::size(mesh.comm()) == 1)
-  {
-    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-                              mesh.geometry().cmap(), new_vertex_coords, xshape,
-                              mesh::GhostMode::none),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-  else
-  {
-    std::shared_ptr<const common::IndexMap> map_c
-        = mesh.topology()->index_map(mesh.topology()->dim());
-    const int num_ghost_cells = map_c->num_ghosts();
-    // Check if mesh has ghost cells on any rank
-    // FIXME: this is not a robust test. Should be user option.
-    int max_ghost_cells = 0;
-    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
-                  mesh.comm());
-
-    // Build mesh
-    const mesh::GhostMode ghost_mode = max_ghost_cells == 0
-                                           ? mesh::GhostMode::none
-                                           : mesh::GhostMode::shared_facet;
-
-    return {partition<T>(mesh, cell_adj, new_vertex_coords, xshape,
-                         redistribute, ghost_mode),
-            std::move(parent_cell), std::move(parent_facet)};
-  }
-}
-
 /// Refine with markers returning new mesh data.
 ///
 /// @param[in] mesh Input mesh to be refined
@@ -595,5 +534,55 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
           std::move(parent_cell), std::move(parent_facet)};
+}
+
+/// @brief Refine with markers, optionally redistributing, and
+/// optionally calculating the parent-child relationships.
+///
+/// @param[in] mesh Input mesh to be refined
+/// @param[in] edges Optional indices of the edges that should be split by this
+/// refinement, if optional is not set, a uniform refinement is performend, same
+/// behavior as passing a list of all indices.
+/// @param[in] redistribute Flag to call the Mesh Partitioner to
+/// redistribute after refinement
+/// @param[in] option Control the computation of parent facets, parent
+/// cells. If an option is unselected, an empty list is returned.
+/// @return New Mesh and optional parent cell index, parent facet indices
+template <std::floating_point T>
+std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
+refine(const mesh::Mesh<T>& mesh,
+       std::optional<std::span<const std::int32_t>> edges, bool redistribute,
+       Option option)
+{
+  auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
+      = compute_refinement_data(mesh, edges, option);
+
+  if (dolfinx::MPI::size(mesh.comm()) == 1)
+  {
+    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
+                              mesh.geometry().cmap(), new_vertex_coords, xshape,
+                              mesh::GhostMode::none),
+            std::move(parent_cell), std::move(parent_facet)};
+  }
+  else
+  {
+    std::shared_ptr<const common::IndexMap> map_c
+        = mesh.topology()->index_map(mesh.topology()->dim());
+    const int num_ghost_cells = map_c->num_ghosts();
+    // Check if mesh has ghost cells on any rank
+    // FIXME: this is not a robust test. Should be user option.
+    int max_ghost_cells = 0;
+    MPI_Allreduce(&num_ghost_cells, &max_ghost_cells, 1, MPI_INT, MPI_MAX,
+                  mesh.comm());
+
+    // Build mesh
+    const mesh::GhostMode ghost_mode = max_ghost_cells == 0
+                                           ? mesh::GhostMode::none
+                                           : mesh::GhostMode::shared_facet;
+
+    return {partition<T>(mesh, cell_adj, new_vertex_coords, xshape,
+                         redistribute, ghost_mode),
+            std::move(parent_cell), std::move(parent_facet)};
+  }
 }
 } // namespace dolfinx::refinement::plaza
