@@ -58,6 +58,7 @@ create_refined_mesh(const mesh::Mesh<T>& mesh,
 /// behavior as passing a list of all indices.
 /// @param[in] redistribute Flag to call the Mesh Partitioner to
 /// redistribute after refinement
+/// @param[in] ghost_mode Ghost mode of the refined mesh
 /// @param[in] option Control the computation of parent facets, parent
 /// cells. If an option is unselected, an empty list is returned.
 /// @return New Mesh and optional parent cell index, parent facet indices
