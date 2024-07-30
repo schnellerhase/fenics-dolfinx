@@ -19,6 +19,7 @@
 #include "dolfinx/mesh/Mesh.h"
 #include "dolfinx/mesh/cell_types.h"
 #include "dolfinx/mesh/utils.h"
+#include "dolfinx/refinement/utils.h"
 #include "dolfinx/refinement/plaza.h"
 
 namespace dolfinx::refinement
