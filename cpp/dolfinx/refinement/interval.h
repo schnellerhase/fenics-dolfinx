@@ -20,10 +20,7 @@
 #include "dolfinx/refinement/option.h"
 #include "dolfinx/refinement/utils.h"
 
-namespace dolfinx::refinement
-{
-
-namespace interval
+namespace dolfinx::refinement::interval
 {
 
 /// Refine with markers returning new mesh data.
@@ -186,6 +183,4 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
           std::move(parent_cell), {}};
 }
 
-} // namespace interval
-
-} // namespace dolfinx::refinement
+} // namespace dolfinx::refinement::interval
