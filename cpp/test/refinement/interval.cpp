@@ -54,7 +54,8 @@ TEST_CASE("Interval uniform refinement", "refinement,interval,uniform")
   mesh::Mesh<double> mesh = create_3_vertex_interval_mesh();
   mesh.topology()->create_connectivity(1, 0);
 
-  auto [refined_mesh, parent_edge]
+  // TODO: parent_facet
+  auto [refined_mesh, parent_edge, parent_facet]
       = refinement::refine_interval(mesh, std::nullopt, false);
 
   // Check geometry
@@ -131,7 +132,8 @@ TEST_CASE("Interval adaptive refinement", "refinement,interval,adaptive")
   mesh.topology()->create_connectivity(1, 0);
 
   std::vector<std::int32_t> edges{1};
-  auto [refined_mesh, parent_edge]
+  // TODO: parent_facet
+  auto [refined_mesh, parent_edge, parent_facet]
       = refinement::refine_interval(mesh, std::span(edges), false);
 
   // Check geometry
@@ -239,7 +241,8 @@ TEST_CASE("Interval Refinement (parallel)", "refinement,interval,paralle")
 
   // complete refinement
   {
-    auto [refined_mesh, parent_edges]
+    // TODO: parent_facet
+    auto [refined_mesh, parent_edges, parent_facet]
         = refinement::refine_interval(mesh, std::nullopt, false);
 
     // Check geometry

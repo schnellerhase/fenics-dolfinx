@@ -37,7 +37,7 @@ namespace impl
 /// cell indices.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>>
+           std::array<std::size_t, 2>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 compute_interval_refinement(const mesh::Mesh<T>& mesh,
                             std::optional<std::span<const std::int32_t>> cells)
 {
@@ -171,7 +171,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
   graph::AdjacencyList cell_adj(std::move(cell_topology), std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
-          std::move(parent_cell)};
+          std::move(parent_cell), {}};
 }
 
 } // namespace impl
@@ -192,7 +192,7 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
 /// child cell index of the refined mesh to its parent cell index in the
 /// unrefined mesh.
 template <std::floating_point T>
-std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>>
+std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine_interval(const mesh::Mesh<T>& mesh,
                 std::optional<std::span<const std::int32_t>> cells,
                 bool redistribute,
@@ -205,7 +205,7 @@ refine_interval(const mesh::Mesh<T>& mesh,
   assert(mesh.topology()->dim() == 1);
   assert(mesh.topology()->index_map(1));
 
-  auto [cell_adj, new_coords, xshape, parent_cell]
+  auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
       = impl::compute_interval_refinement(mesh, cells);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
@@ -213,14 +213,16 @@ refine_interval(const mesh::Mesh<T>& mesh,
     return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
                               mesh.geometry().cmap(), new_coords, xshape,
                               mesh::GhostMode::none),
-            std::move(parent_cell)};
+            std::move(parent_cell), std::move(parent_facet)};
   }
   else
   {
     return {partition<T>(mesh, cell_adj, std::span(new_coords), xshape,
                          redistribute, ghost_mode),
-            std::move(parent_cell)};
+            std::move(parent_cell), std::move(parent_facet)};
   }
 }
+
+// TODO: namespace interval?
 
 } // namespace dolfinx::refinement
