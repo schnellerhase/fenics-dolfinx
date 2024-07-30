@@ -27,6 +27,7 @@ namespace dolfinx::refinement
 namespace
 {
 
+/// @brief create the refined mesh by optionally redistributing it
 template <std::floating_point T>
 mesh::Mesh<T>
 create_refined_mesh(const mesh::Mesh<T>& mesh,
@@ -36,18 +37,15 @@ create_refined_mesh(const mesh::Mesh<T>& mesh,
                     mesh::GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(mesh.comm()) == 1)
-  {
     // no parallel construction necessary, i.e. redistribute also has no effect.
     return mesh::create_mesh(mesh.comm(), cell_adj.array(),
                              mesh.geometry().cmap(), new_vertex_coords, xshape,
                              ghost_mode);
-  }
+
   else
-  {
-    // Build mesh
+    // let partition handle the parallel construction of the mesh
     return partition<T>(mesh, cell_adj, new_vertex_coords, xshape, redistribute,
                         ghost_mode);
-  }
 }
 } // namespace
 

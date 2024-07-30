@@ -23,8 +23,11 @@ from dolfinx import mesh
 @pytest.mark.parametrize("redistribute", [True, False])
 def test_refine_interval(n, ghost_mode, redistribute, ghost_mode_refined):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
-    msh_refined, edges = mesh.refine_interval(
-        msh, redistribute=redistribute, ghost_mode=ghost_mode_refined
+    msh_refined, edges, vertices = mesh.refine(
+        msh,
+        redistribute=redistribute,
+        ghost_mode=ghost_mode_refined,
+        option=mesh.RefinementOption.parent_cell,
     )
 
     # vertex count
@@ -48,8 +51,12 @@ def test_refine_interval(n, ghost_mode, redistribute, ghost_mode_refined):
 @pytest.mark.parametrize("redistribute", [True, False])
 def test_refine_interval_adaptive(n, ghost_mode, redistribute, ghost_mode_refined):
     msh = mesh.create_interval(MPI.COMM_WORLD, n, [0, 1], ghost_mode=ghost_mode)
-    msh_refined, edges = mesh.refine_interval(
-        msh, np.arange(10, dtype=np.int32), redistribute=redistribute, ghost_mode=ghost_mode_refined
+    msh_refined, edges, vertices = mesh.refine(
+        msh,
+        np.arange(10, dtype=np.int32),
+        redistribute=redistribute,
+        ghost_mode=ghost_mode_refined,
+        option=mesh.RefinementOption.parent_cell,
     )
 
     # vertex count
