@@ -25,7 +25,7 @@
 namespace dolfinx::refinement
 {
 
-namespace impl
+namespace interval
 {
 
 /// Refine with markers returning new mesh data.
@@ -38,7 +38,7 @@ namespace impl
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>, std::vector<std::int8_t>>
-compute_interval_refinement(const mesh::Mesh<T>& mesh,
+compute_refinement_data(const mesh::Mesh<T>& mesh,
                             std::optional<std::span<const std::int32_t>> cells)
 {
   // TODO: option
@@ -175,55 +175,6 @@ compute_interval_refinement(const mesh::Mesh<T>& mesh,
           std::move(parent_cell), {}};
 }
 
-} // namespace impl
-
-/// Refines a (topologically) one dimensional mesh by splitting cells, i.e.
-/// edges.
-///
-/// @param[in] mesh Mesh to be refined
-/// @param[in] cells Optional indices of the cells that should be refined by
-/// this refinement. If not provided, all cells are considered marked for
-/// refinement, i.e. a uniform refinement is performed.
-/// @param[in] redistribute Option to enable redistribution of the refined mesh
-/// across processes.
-/// @param[in] ghost_mode Ghost mode of the refined mesh, default is ghost mode
-/// none
-///
-/// @return Refined mesh, and list of parent cells and an array mapping the
-/// child cell index of the refined mesh to its parent cell index in the
-/// unrefined mesh.
-// template <std::floating_point T>
-// std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>,
-// std::vector<std::int8_t>> refine_interval(const mesh::Mesh<T>& mesh,
-//                 std::optional<std::span<const std::int32_t>> cells,
-//                 bool redistribute,
-//                 mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet)
-// {
-
-//   if (mesh.topology()->cell_type() != mesh::CellType::interval)
-//     throw std::runtime_error("Cell type not supported");
-
-//   assert(mesh.topology()->dim() == 1);
-//   assert(mesh.topology()->index_map(1));
-
-//   auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
-//       = impl::compute_interval_refinement(mesh, cells);
-
-//   if (dolfinx::MPI::size(mesh.comm()) == 1)
-//   {
-//     return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
-//                               mesh.geometry().cmap(), new_coords, xshape,
-//                               mesh::GhostMode::none),
-//             std::move(parent_cell), std::move(parent_facet)};
-//   }
-//   else
-//   {
-//     return {partition<T>(mesh, cell_adj, std::span(new_coords), xshape,
-//                          redistribute, ghost_mode),
-//             std::move(parent_cell), std::move(parent_facet)};
-//   }
-// }
-
-// TODO: namespace interval?
+} // namespace interval
 
 } // namespace dolfinx::refinement
