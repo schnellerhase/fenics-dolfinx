@@ -32,9 +32,12 @@ def test_refine_create_unit_square():
     """Refine mesh of unit square."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, redistribute=False)
-    assert mesh.topology.index_map(0).size_global == 165
-    assert mesh.topology.index_map(2).size_global == 280
+    mesh_refined, _, _ = refine(mesh, redistribute=False)
+    assert mesh_refined.topology.index_map(0).size_global == 165
+    assert mesh_refined.topology.index_map(2).size_global == 280
+
+    # Test that 2D refinement is still 2D
+    assert mesh.geometry.dim == mesh_refined.geometry.dim
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
@@ -74,14 +77,6 @@ def test_refine_create_form():
     v = ufl.TestFunction(V)
     a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
     assemble_matrix(a)
-
-
-def test_refinement_gdim():
-    """Test that 2D refinement is still 2D"""
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, ghost_mode=GhostMode.none)
-    mesh.topology.create_entities(1)
-    mesh2, _, _ = refine(mesh, redistribute=True)
-    assert mesh.geometry.dim == mesh2.geometry.dim
 
 
 def test_sub_refine():
