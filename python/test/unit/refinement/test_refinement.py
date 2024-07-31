@@ -37,15 +37,10 @@ def test_refine_create_unit_square():
     assert mesh.topology.index_map(2).size_global == 280
 
 
-def test_refine_create_unit_cube_repartition():
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+def test_refine_create_unit_cube_repartition(ghost_mode):
     """Refine mesh of unit cube."""
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
-    mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, redistribute=True)
-    assert mesh.topology.index_map(0).size_global == 3135
-    assert mesh.topology.index_map(3).size_global == 15120
-
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.shared_facet)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
     mesh, _, _ = refine(mesh, redistribute=True)
     assert mesh.topology.index_map(0).size_global == 3135
