@@ -41,25 +41,15 @@ def test_refine_create_unit_square():
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_refine_create_unit_cube_repartition(ghost_mode):
+@pytest.mark.parametrize("redistribute", [True, False])
+def test_refine_create_unit_cube(ghost_mode, redistribute):
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=ghost_mode)
     mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, redistribute=True)
+    mesh, _, _ = refine(mesh, redistribute=redistribute)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
-    Q = functionspace(mesh, ("Lagrange", 1))
-    assert Q
-
-
-def test_refine_create_unit_cube_keep_partition():
-    """Refine mesh of unit cube."""
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
-    mesh.topology.create_entities(1)
-    mesh, _, _ = refine(mesh, redistribute=False)
-    assert mesh.topology.index_map(0).size_global == 3135
-    assert mesh.topology.index_map(3).size_global == 15120
     Q = functionspace(mesh, ("Lagrange", 1))
     assert Q
 
