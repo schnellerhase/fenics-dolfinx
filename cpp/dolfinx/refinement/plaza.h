@@ -286,7 +286,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
-           std::vector<std::int8_t>>
+           std::optional<std::vector<std::int8_t>>>
 compute_refinement(MPI_Comm neighbor_comm,
                    std::span<const std::int8_t> marked_edges,
                    const graph::AdjacencyList<int>& shared_edges,
@@ -309,7 +309,10 @@ compute_refinement(MPI_Comm neighbor_comm,
   if (compute_parent_cell)
     parent_cell.emplace();
 
-  std::vector<std::int8_t> parent_facet;
+  std::optional<std::vector<std::int8_t>> parent_facet(std::nullopt);
+  if (compute_facets)
+    parent_facet.emplace();
+
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<std::int32_t> simplex_set;
 
@@ -371,9 +374,9 @@ compute_refinement(MPI_Comm neighbor_comm,
       if (compute_facets)
       {
         if (tdim == 3)
-          parent_facet.insert(parent_facet.end(), {0, 1, 2, 3});
+          parent_facet->insert(parent_facet->end(), {0, 1, 2, 3});
         else
-          parent_facet.insert(parent_facet.end(), {0, 1, 2});
+          parent_facet->insert(parent_facet->end(), {0, 1, 2});
       }
     }
     else
@@ -416,14 +419,14 @@ compute_refinement(MPI_Comm neighbor_comm,
         if (tdim == 3)
         {
           auto npf = compute_parent_facets<3>(simplex_set);
-          parent_facet.insert(parent_facet.end(), npf.begin(),
-                              std::next(npf.begin(), simplex_set.size()));
+          parent_facet->insert(parent_facet->end(), npf.begin(),
+                               std::next(npf.begin(), simplex_set.size()));
         }
         else
         {
           auto npf = compute_parent_facets<2>(simplex_set);
-          parent_facet.insert(parent_facet.end(), npf.begin(),
-                              std::next(npf.begin(), simplex_set.size()));
+          parent_facet->insert(parent_facet->end(), npf.begin(),
+                               std::next(npf.begin(), simplex_set.size()));
         }
       }
 
@@ -457,7 +460,7 @@ compute_refinement(MPI_Comm neighbor_comm,
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
-           std::vector<std::int8_t>>
+           std::optional<std::vector<std::int8_t>>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
                         std::optional<std::span<const std::int32_t>> edges,
                         Option option)

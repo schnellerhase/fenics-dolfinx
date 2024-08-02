@@ -62,7 +62,7 @@ create_refined_mesh(const mesh::Mesh<T>& mesh,
 /// @return New Mesh and optional parent cell index, parent facet indices
 template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
-           std::vector<std::int8_t>>
+           std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges, bool redistribute,
        mesh::GhostMode ghost_mode = mesh::GhostMode::shared_facet,

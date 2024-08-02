@@ -56,8 +56,13 @@ void export_refinement_with_variable_mesh_type(nb::module_& m)
         if (cell.has_value())
           python_cell.emplace(as_nbarray(std::move(cell.value())));
 
+        std::optional<nb::ndarray<std::int8_t, nb::numpy>> python_facet(
+            std::nullopt);
+        if (facet.has_value())
+          python_facet.emplace(as_nbarray(std::move(facet.value())));
+
         return std::tuple{std::move(mesh1), std::move(python_cell),
-                          as_nbarray(std::move(facet))};
+                          std::move(python_facet)};
       },
       nb::arg("mesh"), nb::arg("edges") = nb::none(), nb::arg("redistribute"),
       nb::arg("ghost_mode"), nb::arg("option"));

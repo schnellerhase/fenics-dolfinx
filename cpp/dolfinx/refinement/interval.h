@@ -34,7 +34,7 @@ namespace dolfinx::refinement::interval
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
-           std::vector<std::int8_t>>
+           std::optional<std::vector<std::int8_t>>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
                         std::optional<std::span<const std::int32_t>> cells,
                         Option option)
@@ -183,7 +183,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   graph::AdjacencyList cell_adj(std::move(cell_topology), std::move(offsets));
 
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
-          std::move(parent_cell), {}};
+          std::move(parent_cell), std::nullopt};
 }
 
 } // namespace dolfinx::refinement::interval
