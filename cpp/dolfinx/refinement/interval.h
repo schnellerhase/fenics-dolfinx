@@ -33,7 +33,7 @@ namespace dolfinx::refinement::interval
 /// cell indices.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
            std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
                         std::optional<std::span<const std::int32_t>> cells,
@@ -133,9 +133,12 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   std::vector<std::int64_t> cell_topology;
   cell_topology.reserve(refined_cell_count * 2);
 
-  std::vector<std::int32_t> parent_cell;
+  std::optional<std::vector<std::int32_t>> parent_cell(std::nullopt);
   if (compute_parent_cell)
-    parent_cell.reserve(refined_cell_count);
+  {
+    parent_cell.emplace();
+    parent_cell->reserve(refined_cell_count);
+  }
 
   for (std::int32_t cell = 0; cell < map_c->size_local(); ++cell)
   {
@@ -159,7 +162,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
       cell_topology.insert(cell_topology.end(), {a, c, c, b});
 
       if (compute_parent_cell)
-        parent_cell.insert(parent_cell.end(), {cell, cell});
+        parent_cell->insert(parent_cell->end(), {cell, cell});
     }
     else
     {
@@ -167,12 +170,12 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
       cell_topology.insert(cell_topology.end(), {a, b});
 
       if (compute_parent_cell)
-        parent_cell.push_back(cell);
+        parent_cell->push_back(cell);
     }
   }
 
   assert(cell_topology.size() == refined_cell_count * 2);
-  assert(parent_cell.size() == (compute_parent_cell ? refined_cell_count : 0));
+  assert(parent_cell->size() == (compute_parent_cell ? refined_cell_count : 0));
 
   std::vector<std::int32_t> offsets(refined_cell_count + 1);
   std::ranges::generate(offsets, [i = 0]() mutable { return 2 * i++; });

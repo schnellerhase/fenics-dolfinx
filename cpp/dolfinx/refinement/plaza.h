@@ -285,7 +285,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 /// and (5) map from refined facets to parent facets.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
            std::vector<std::int8_t>>
 compute_refinement(MPI_Comm neighbor_comm,
                    std::span<const std::int8_t> marked_edges,
@@ -305,7 +305,10 @@ compute_refinement(MPI_Comm neighbor_comm,
   const auto [new_vertex_map, new_vertex_coords, xshape]
       = create_new_vertices(neighbor_comm, shared_edges, mesh, marked_edges);
 
-  std::vector<std::int32_t> parent_cell;
+  std::optional<std::vector<std::int32_t>> parent_cell(std::nullopt);
+  if (compute_parent_cell)
+    parent_cell.emplace();
+
   std::vector<std::int8_t> parent_facet;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<std::int32_t> simplex_set;
@@ -363,7 +366,7 @@ compute_refinement(MPI_Comm neighbor_comm,
         cell_topology.push_back(global_indices[v]);
 
       if (compute_parent_cell)
-        parent_cell.push_back(c);
+        parent_cell->push_back(c);
 
       if (compute_facets)
       {
@@ -405,7 +408,7 @@ compute_refinement(MPI_Comm neighbor_comm,
       if (compute_parent_cell)
       {
         for (std::int32_t i = 0; i < ncells; ++i)
-          parent_cell.push_back(c);
+          parent_cell->push_back(c);
       }
 
       if (compute_facets)
@@ -453,7 +456,7 @@ compute_refinement(MPI_Comm neighbor_comm,
 /// cell index, and stored parent facet indices (if requested).
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
-           std::array<std::size_t, 2>, std::vector<std::int32_t>,
+           std::array<std::size_t, 2>, std::optional<std::vector<std::int32_t>>,
            std::vector<std::int8_t>>
 compute_refinement_data(const mesh::Mesh<T>& mesh,
                         std::optional<std::span<const std::int32_t>> edges,

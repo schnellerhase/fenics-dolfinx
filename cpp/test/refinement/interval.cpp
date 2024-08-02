@@ -115,12 +115,14 @@ TEST_CASE("Interval uniform refinement", "refinement,interval,uniform")
 
   // Check parent edges
   {
-    CHECK(parent_edge.size() == 4);
+    CHECK(parent_edge.has_value());
 
-    CHECK(parent_edge[0] == 0);
-    CHECK(parent_edge[1] == 0);
-    CHECK(parent_edge[2] == 1);
-    CHECK(parent_edge[3] == 1);
+    CHECK(parent_edge.value().size() == 4);
+
+    CHECK(parent_edge.value()[0] == 0);
+    CHECK(parent_edge.value()[1] == 0);
+    CHECK(parent_edge.value()[2] == 1);
+    CHECK(parent_edge.value()[3] == 1);
   }
 }
 
@@ -185,11 +187,13 @@ TEST_CASE("Interval adaptive refinement", "refinement,interval,adaptive")
 
   // Check parent edges
   {
-    CHECK(parent_edge.size() == 3);
+    CHECK(parent_edge.has_value());
 
-    CHECK(parent_edge[0] == 0);
-    CHECK(parent_edge[1] == 1);
-    CHECK(parent_edge[2] == 1);
+    CHECK(parent_edge.value().size() == 3);
+
+    CHECK(parent_edge.value()[0] == 0);
+    CHECK(parent_edge.value()[1] == 1);
+    CHECK(parent_edge.value()[2] == 1);
   }
 }
 
