@@ -85,23 +85,23 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
 {
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_vertex);
   auto mesh_coarse = std::make_shared<mesh::Mesh<double>>(
-      dolfinx::mesh::create_interval<double>(MPI_COMM_SELF, 2, {0.0, 1.0},
+      dolfinx::mesh::create_interval<double>(MPI_COMM_SELF, 2, {0.0, 1.0}, mesh::GhostMode::none,
                                              part));
 
   bool redistribute = false;
   auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
-      *mesh_coarse, std::nullopt, redistribute, mesh::GhostMode::shared_facet,
+      *mesh_coarse, std::nullopt, redistribute, mesh::GhostMode::none,
       refinement::Option::parent_cell);
 
   std::cout << "parent_cell = ";
-  for (auto pc : parent_cell)
+  for (auto pc : parent_cell.value())
     std::cout << pc << ", ";
   std::cout << std::endl;
 
-  std::cout << "parent_facet = ";
-  for (auto pc : parent_facet)
-    std::cout << pc << ", ";
-  std::cout << std::endl;
+  // std::cout << "parent_facet = ";
+  // for (auto pc : parent_facet.value())
+  //   std::cout << pc << ", ";
+  // std::cout << std::endl;
 
   auto element = basix::create_element<double>(
       basix::element::family::P, basix::cell::type::interval, 1,
@@ -117,7 +117,7 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
   mesh_fine.topology()->create_connectivity(1, 0);
 
   auto sparsity_pattern
-      = create_sparsity<double>(*V_coarse, *V_fine, parent_cell);
+      = create_sparsity<double>(*V_coarse, *V_fine, parent_cell.value());
 
   la::MatrixCSR<double> transfer_matrix(sparsity_pattern,
                                         la::BlockMode::compact);
