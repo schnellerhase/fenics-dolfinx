@@ -60,8 +60,9 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
   assert(cell_map_from);
   assert(cell_map_to);
 
-  std::vector<int32_t> c_to_f { 0, 2, 4 };
-  for (int dof_from = 0; dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
+  std::vector<int32_t> c_to_f{0, 2, 4}; // TODO: general computation!
+  for (int dof_from = 0;
+       dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
   {
     int32_t dof_to = c_to_f[dof_from];
 
@@ -71,34 +72,13 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
       auto to_f_to_v = mesh_to->topology()->connectivity(1, 0);
       for (auto n : to_f_to_v->links(e))
       {
-        // if (n == dof_to)
-        //   continue;
-        std::cout << "coarse " << dof_from << " has fine neighbors " <<  n << std::endl;
-         std::vector<int32_t> a{dof_from};
-        std::vector<int32_t> b{n};
-        sp.insert(a, b);
+        std::cout << "coarse " << dof_from << " has fine neighbors " << n
+                  << std::endl;
+        sp.insert(std::vector<int32_t>{dof_from}, std::vector<int32_t>{n});
       }
     }
   }
-
-  // auto c_to_v_from = mesh_from->topology()->connectivity(tdim, 0);
-  // auto c_to_v_to = mesh_to->topology()->connectivity(tdim, 0);
-  // for (int cell_idx = 0; cell_idx < cell_map_to->size_local(); cell_idx++)
-  // {
-  //   auto parent_cell = parent_cells[cell_idx];
-
-  //   for (auto v_to : c_to_v_to->links(cell_idx))
-  //   {
-  //     for (auto v_from : c_to_v_from->links(parent_cell))
-  //     {
-  //       std::vector<int32_t> parent(1, v_from);
-  //       std::vector<int32_t> e_span{v_to};
-  //       sp.insert(parent, e_span);
-  //     }
-  //   }
-  // }
   sp.finalize();
-
   return sp;
 }
 
@@ -106,8 +86,8 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
 {
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_vertex);
   auto mesh_coarse = std::make_shared<mesh::Mesh<double>>(
-      dolfinx::mesh::create_interval<double>(MPI_COMM_SELF, 2, {0.0, 1.0}, mesh::GhostMode::none,
-                                             part));
+      dolfinx::mesh::create_interval<double>(MPI_COMM_SELF, 2, {0.0, 1.0},
+                                             mesh::GhostMode::none, part));
 
   bool redistribute = false;
   auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
@@ -136,14 +116,36 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
           std::make_shared<mesh::Mesh<double>>(mesh_fine), element, {}));
 
   mesh_fine.topology()->create_connectivity(1, 0);
-  mesh_fine.topology()->create_connectivity(0,1);
+  mesh_fine.topology()->create_connectivity(0, 1);
 
   auto sparsity_pattern
       = create_sparsity<double>(*V_coarse, *V_fine, parent_cell.value());
 
   la::MatrixCSR<double> transfer_matrix(sparsity_pattern,
                                         la::BlockMode::compact);
-  transfer_matrix.set(1);
+  // transfer_matrix.set(1);
+
+  auto mesh_from = mesh_coarse;
+  auto mesh_to = mesh_fine;
+  std::vector<int32_t> c_to_f{0, 2, 4}; // TODO: general computation!
+  for (int dof_from = 0;
+       dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
+  {
+    int32_t dof_to = c_to_f[dof_from];
+
+    auto to_v_to_f = mesh_to.topology()->connectivity(0, 1);
+    for (auto e : to_v_to_f->links(dof_to))
+    {
+      auto to_f_to_v = mesh_to.topology()->connectivity(1, 0);
+      for (auto n : to_f_to_v->links(e))
+      {
+        double value = n == dof_to ? 1 : .5;
+        transfer_matrix.set<1, 1>(std::vector<double>{value},
+                                  std::vector<int32_t>{dof_from},
+                                  std::vector<int32_t>{n});
+      }
+    }
+  }
 
   std::vector<double> dense = transfer_matrix.to_dense();
   for (int i = 0; i < transfer_matrix.index_map(0)->size_local(); i++)
