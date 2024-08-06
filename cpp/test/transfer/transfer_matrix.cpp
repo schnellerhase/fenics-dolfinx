@@ -21,7 +21,7 @@ template <typename U>
 dolfinx::la::SparsityPattern
 create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
                 const dolfinx::fem::FunctionSpace<U>& V_to,
-                [[maybe_unused]] const std::vector<std::int32_t>& parent_cells)
+                const std::vector<std::int32_t>& from_to_map)
 {
   auto mesh_from = V_from.mesh();
   auto mesh_to = V_to.mesh();
@@ -60,11 +60,10 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
   assert(cell_map_from);
   assert(cell_map_to);
 
-  std::vector<int32_t> c_to_f{0, 2, 4}; // TODO: general computation!
   for (int dof_from = 0;
        dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
   {
-    int32_t dof_to = c_to_f[dof_from];
+    int32_t dof_to = from_to_map[dof_from];
 
     auto to_v_to_f = mesh_to->topology()->connectivity(0, 1);
     for (auto e : to_v_to_f->links(dof_to))
@@ -118,8 +117,10 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
+  std::vector<int32_t> from_to_map{0, 2, 4}; // TODO: general computation!
+
   auto sparsity_pattern
-      = create_sparsity<double>(*V_coarse, *V_fine, parent_cell.value());
+      = create_sparsity<double>(*V_coarse, *V_fine, from_to_map);
 
   la::MatrixCSR<double> transfer_matrix(sparsity_pattern,
                                         la::BlockMode::compact);
@@ -127,11 +128,10 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
 
   auto mesh_from = mesh_coarse;
   auto mesh_to = mesh_fine;
-  std::vector<int32_t> c_to_f{0, 2, 4}; // TODO: general computation!
   for (int dof_from = 0;
        dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
   {
-    int32_t dof_to = c_to_f[dof_from];
+    int32_t dof_to = from_to_map[dof_from];
 
     auto to_v_to_f = mesh_to.topology()->connectivity(0, 1);
     for (auto e : to_v_to_f->links(dof_to))
@@ -157,5 +157,4 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
     }
     std::cout << "\n";
   }
-  // create_1d_transfer_matrix(V0, V1);
 }
