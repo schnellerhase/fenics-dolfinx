@@ -44,6 +44,7 @@ add_executable(
   common/CIFailure.cpp
   refinement/interval.cpp
   refinement/option.cpp
+  refinement/rectangle.cpp
   transfer/transfer_matrix.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
