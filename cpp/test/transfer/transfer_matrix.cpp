@@ -1,8 +1,10 @@
+#include "la/SparsityPattern.h"
 #include <cstdint>
 #include <memory>
 #include <mpi.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/utils.h>
@@ -14,6 +16,9 @@
 #include <optional>
 
 using namespace dolfinx;
+using namespace Catch::Matchers;
+
+constexpr auto EPS = std::numeric_limits<double>::epsilon();
 
 /// from = row
 /// to = column
@@ -79,6 +84,11 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
   }
   sp.finalize();
   return sp;
+}
+
+la::MatrixCSR<double> transfer_matrix(la::SparsityPattern)
+{
+
 }
 
 TEST_CASE("Transfer Matrix", "transfer_matrix")
@@ -148,13 +158,18 @@ TEST_CASE("Transfer Matrix", "transfer_matrix")
   }
 
   std::vector<double> dense = transfer_matrix.to_dense();
-  for (int i = 0; i < transfer_matrix.index_map(0)->size_local(); i++)
-  {
-    for (int j = 0; j < transfer_matrix.index_map(1)->size_local(); j++)
-    {
-      std::cout << dense[i * transfer_matrix.index_map(1)->size_local() + j]
-                << " ";
-    }
-    std::cout << "\n";
-  }
+  std::vector<double> expected{1.0, .5, 0, 0 ,0, 0, .5, 1, .5, 0, 0, 0, 0, .5, 1};
+  CHECK(dense.size() == expected.size());
+  for (std::int32_t i = 0; i< dense.size(); i++)
+    REQUIRE_THAT(dense[i], WithinAbs(expected[i], EPS));
+
+  // for (int i = 0; i < transfer_matrix.index_map(0)->size_local(); i++)
+  // {
+  //   for (int j = 0; j < transfer_matrix.index_map(1)->size_local(); j++)
+  //   {
+  //     std::cout << dense[i * transfer_matrix.index_map(1)->size_local() + j]
+  //               << " ";
+  //   }
+  //   std::cout << "\n";
+  // }
 }
