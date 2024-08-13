@@ -15,10 +15,10 @@ namespace dolfinx::refinement
 /// @brief Options for data to compute during mesh refinement.
 enum class Option : std::uint8_t
 {
-    none = 0,
-    parent_facet = 1 << 0,
-    parent_cell = 1 << 1,
-    parent_cell_and_facet = parent_facet | parent_cell
+    none = 0b00,
+    parent_facet = 0b01,
+    parent_cell = 0b10,
+    parent_cell_and_facet = 0b11
 };
 
 /// @brief Combine two refinement options into one, both flags will be set for
