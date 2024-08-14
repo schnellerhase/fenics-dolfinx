@@ -34,7 +34,7 @@ void CHECK_adjacency_list_equal(
     const graph::AdjacencyList<T>& adj_list,
     const std::vector<std::vector<T>>& expected_list)
 {
-  REQUIRE(adj_list.num_nodes() == expected_list.size());
+  REQUIRE(static_cast<std::size_t>(adj_list.num_nodes()) == expected_list.size());
 
   for (T i = 0; i < adj_list.num_nodes(); i++)
     CHECK_THAT(adj_list.links(i), RangeEquals(expected_list[i]));
