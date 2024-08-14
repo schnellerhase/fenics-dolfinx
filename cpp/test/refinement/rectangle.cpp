@@ -6,13 +6,14 @@
 
 #include <limits>
 #include <optional>
-#include <span>
 
 #include <mpi.h>
 
-#include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -25,97 +26,129 @@
 using namespace dolfinx;
 using namespace Catch::Matchers;
 
-constexpr auto EPS = std::numeric_limits<double>::epsilon();
+template <typename T>
+constexpr auto EPS = std::numeric_limits<T>::epsilon();
 
-TEST_CASE("Rectangle uniform refinement", "refinement,rectangle,uniform")
+template <typename T>
+void CHECK_adjacency_list_equal(
+    const graph::AdjacencyList<T>& adj_list,
+    const std::vector<std::vector<T>>& expected_list)
 {
-  if (dolfinx::MPI::rank(MPI_COMM_WORLD) > 1)
+  REQUIRE(adj_list.num_nodes() == expected_list.size());
+
+  for (T i = 0; i < adj_list.num_nodes(); i++)
+    CHECK_THAT(adj_list.links(i), RangeEquals(expected_list[i]));
+}
+
+TEMPLATE_TEST_CASE("Rectangle uniform refinement",
+                   "refinement,rectangle,uniform", float, double)
+{
+  /**
+To Debug this test or visualize use:
+
+from mpi4py import MPI
+
+import febug
+import pyvista
+
+import dolfinx
+
+mesh = dolfinx.mesh.create_rectangle(
+    MPI.COMM_WORLD,
+    ((0.0, 0.0), (1.0, 1.0)),
+    (1, 1),
+    dolfinx.mesh.CellType.triangle,
+    ghost_mode=dolfinx.mesh.GhostMode.shared_facet,
+)
+
+mesh.topology.create_entities(1)
+
+(
+    refined,
+    _,
+    _,
+) = dolfinx.mesh.refine(mesh, redistribute=False)
+
+plotter = pyvista.Plotter()
+
+refined.topology.create_connectivity(0, 2)
+
+for tdim in range(refined.topology.dim):
+    refined.topology.create_entities(tdim)
+    febug.plot_entity_indices(refined, tdim, plotter=plotter)
+
+plotter.show()
+
+  */
+  using T = TestType;
+
+  if (dolfinx::MPI::size(MPI_COMM_WORLD) > 1)
     return;
 
-  mesh::Mesh<double> mesh =
-      dolfinx::mesh::create_rectangle<double>(MPI_COMM_SELF, {{{0,0}, {1,1}}}, {1,1}, mesh::CellType::triangle);
+  // Mesh connectivity tested/available in mesh/rectangle.cpp
+  mesh::Mesh<T> mesh = dolfinx::mesh::create_rectangle<T>(
+      MPI_COMM_SELF, {{{0, 0}, {1, 1}}}, {1, 1}, mesh::CellType::triangle);
 
-
-  {
-    // check mesh form -> maybe transfer to mesh test case
-    
-    // vertex layout:
-    // 3---2
-    // |  /|
-    // | / |
-    // |/  |
-    // 0---1
-    std::span<double> x = mesh.geometry().x();
-    
-    CHECK(x.size() == 12);
-
-    // vertex 0
-    REQUIRE_THAT(x[0], WithinAbs(0.0, EPS));
-    REQUIRE_THAT(x[1], WithinAbs(0.0, EPS));
-    REQUIRE_THAT(x[2], WithinAbs(0.0, EPS));
-
-    // vertex 1
-    REQUIRE_THAT(x[3], WithinAbs(1.0, EPS));
-    REQUIRE_THAT(x[4], WithinAbs(0.0, EPS));
-    REQUIRE_THAT(x[5], WithinAbs(0.0, EPS));
-
-    // vertex 2
-    REQUIRE_THAT(x[6], WithinAbs(1.0, EPS));
-    REQUIRE_THAT(x[7], WithinAbs(1.0, EPS));
-    REQUIRE_THAT(x[8], WithinAbs(0.0, EPS));
-
-    // vertex 3
-    REQUIRE_THAT(x[9], WithinAbs(0.0, EPS));
-    REQUIRE_THAT(x[10], WithinAbs(1.0, EPS));
-    REQUIRE_THAT(x[11], WithinAbs(0.0, EPS));
-
-
-    // edge layout:
-    // x-4-x
-    // |  /|
-    // 2 1 3
-    // |/  |
-    // x-0-x
-    mesh.topology()->create_connectivity(1, 0);
-    auto e_to_e = mesh.topology()->connectivity(1, 0);
-    CHECK(e_to_e);
-
-    CHECK(e_to_e->num_nodes() == 5);
-
-    auto edge_0 = e_to_e->links(0);
-    CHECK(edge_0.size() == 2);
-    CHECK(edge_0[0] == 0);
-    CHECK(edge_0[1] == 1);
-
-    auto edge_1 = e_to_e->links(1);
-    CHECK(edge_1.size() == 2);
-    CHECK(edge_1[0] == 0);
-    CHECK(edge_1[1] == 2);
-    
-    auto edge_2 = e_to_e->links(2);
-    CHECK(edge_2.size() == 2);
-    CHECK(edge_2[0] == 0);
-    CHECK(edge_2[1] == 3);
-
-    auto edge_3 = e_to_e->links(3);
-    CHECK(edge_3.size() == 2);
-    CHECK(edge_3[0] == 1);
-    CHECK(edge_3[1] == 2);
-
-    auto edge_4 = e_to_e->links(4);
-    CHECK(edge_4.size() == 2);
-    CHECK(edge_4[0] == 2);
-    CHECK(edge_4[1] == 3);
-  }
-
-  //TODO:continue
   // plaza requires the edges to be pre initialized!
   mesh.topology()->create_entities(1);
 
-  bool redistribute = false;
-  auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
-      mesh, std::nullopt, redistribute, mesh::GhostMode::none,
-      refinement::Option::parent_cell_and_facet);
+  auto [mesh_fine, parent_cell, parent_facet]
+      = refinement::refine(mesh, std::nullopt, false, mesh::GhostMode::none,
+                           refinement::Option::parent_cell_and_facet);
 
-  
+  // vertex layout:
+  // 8---7---5
+  // |\  |  /|
+  // | \ | / |
+  // |  \|/  |
+  // 6---0---3
+  // |  /|\  |
+  // | / | \ |
+  // |/  |  \|
+  // 4---2---1
+
+  std::vector<T> expected_x = {/* v_0 */ 0.5, 0.5, 0.0,
+                               /* v_1 */ 1.0, 0.0, 0.0,
+                               /* v_2 */ 0.5, 0.0, 0.0,
+                               /* v_3 */ 1.0, 0.5, 0.0,
+                               /* v_4 */ 0.0, 0.0, 0.0,
+                               /* v_5 */ 1.0, 1.0, 0.0,
+                               /* v_6 */ 0.0, 0.5, 0.0,
+                               /* v_7 */ 0.5, 1.0, 0.0,
+                               /* v_8 */ 0.0, 1.0, 0.0};
+
+  CHECK_THAT(mesh_fine.geometry().x(),
+             RangeEquals(expected_x, [](auto a, auto b)
+                         { return std::abs(a - b) <= EPS<T>; }));
+
+  // edge layout:
+  // x---x---x
+  // |\  |  /|
+  // | \ | / |
+  // |  \|/  |
+  // x---x---x
+  // |  /|\  |
+  // | / | \ |
+  // |/  |  \|
+  // x---x---x
+  mesh_fine.topology()->create_connectivity(1, 0);
+  auto e_to_v = mesh_fine.topology()->connectivity(1, 0);
+  REQUIRE(e_to_v);
+
+  CHECK_adjacency_list_equal(*e_to_v, {/* e_0 */ {0, 1},
+                                       /* e_1 */ {0, 2},
+                                       /* e_2 */ {0, 3},
+                                       /* e_3 */ {0, 4},
+                                       /* e_4 */ {0, 5},
+                                       /* e_5 */ {0, 6},
+                                       /* e_6 */ {0, 7},
+                                       /* e_7 */ {0, 8},
+                                       /* e_8 */ {1, 2},
+                                       /* e_9 */ {1, 3},
+                                       /* e_10 */ {2, 4},
+                                       /* e_11 */ {3, 5},
+                                       /* e_12 */ {4, 6},
+                                       /* e_13 */ {5, 7},
+                                       /* e_14 */ {6, 8},
+                                       /* e_15 */ {7, 8}});
 }
