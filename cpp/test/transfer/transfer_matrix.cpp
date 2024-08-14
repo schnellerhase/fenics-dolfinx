@@ -22,6 +22,7 @@
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
+#include <dolfinx/transfer/transfer_matrix.h>
 
 using namespace dolfinx;
 using namespace Catch::Matchers;
@@ -29,70 +30,7 @@ using namespace Catch::Matchers;
 template <typename T>
 constexpr auto EPS = std::numeric_limits<T>::epsilon();
 
-/// from = row
-/// to = column
-template <typename U>
-dolfinx::la::SparsityPattern
-create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
-                const dolfinx::fem::FunctionSpace<U>& V_to,
-                const std::vector<std::int32_t>& from_to_map)
-{
-  auto mesh_from = V_from.mesh();
-  auto mesh_to = V_to.mesh();
-
-  assert(mesh_from);
-  assert(mesh_to);
-
-  MPI_Comm comm = mesh_from->comm();
-  {
-    // Check comms equal
-    int result;
-    MPI_Comm_compare(comm, mesh_to->comm(), &result);
-    assert(result == MPI_CONGRUENT);
-  }
-
-  auto dofmap_from = V_from.dofmap();
-  auto dofmap_to = V_to.dofmap();
-
-  assert(dofmap_from);
-  assert(dofmap_to);
-
-  // Create and build  sparsity pattern
-  assert(dofmap_from->index_map);
-  assert(dofmap_to->index_map);
-
-  dolfinx::la::SparsityPattern sp(
-      comm, {dofmap_from->index_map, dofmap_to->index_map},
-      {dofmap_from->index_map_bs(), dofmap_to->index_map_bs()});
-
-  assert(mesh_from->topology()->dim() == mesh_to->topology()->dim());
-
-  assert(mesh_from->topology()->index_map(0));
-
-  for (int dof_from = 0;
-       dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
-  {
-    int32_t dof_to = from_to_map[dof_from];
-
-    auto to_v_to_f = mesh_to->topology()->connectivity(0, 1);
-    assert(to_v_to_f);
-    for (auto e : to_v_to_f->links(dof_to))
-    {
-      auto to_f_to_v = mesh_to->topology()->connectivity(1, 0);
-      assert(to_f_to_v);
-      for (auto n : to_f_to_v->links(e))
-      {
-        std::cout << "coarse " << dof_from << " has fine neighbors " << n
-                  << std::endl;
-        sp.insert(std::vector<int32_t>{dof_from}, std::vector<int32_t>{n});
-      }
-    }
-  }
-  sp.finalize();
-  return sp;
-}
-
-TEST_CASE("Transfer Matrix 1D", "transfer_matrix")
+TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]")
 {
   using T = double;
 
@@ -105,16 +43,6 @@ TEST_CASE("Transfer Matrix 1D", "transfer_matrix")
   auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
       *mesh_coarse, std::nullopt, redistribute, mesh::GhostMode::none,
       refinement::Option::parent_cell);
-
-  std::cout << "parent_cell = ";
-  for (auto pc : parent_cell.value())
-    std::cout << pc << ", ";
-  std::cout << std::endl;
-
-  // std::cout << "parent_facet = ";
-  // for (auto pc : parent_facet.value())
-  //   std::cout << pc << ", ";
-  // std::cout << std::endl;
 
   auto element = basix::create_element<double>(
       basix::element::family::P, basix::cell::type::interval, 1,
@@ -132,51 +60,17 @@ TEST_CASE("Transfer Matrix 1D", "transfer_matrix")
 
   std::vector<int32_t> from_to_map{0, 2, 4}; // TODO: general computation!
 
-  auto sparsity_pattern
-      = create_sparsity<double>(*V_coarse, *V_fine, from_to_map);
-
-  la::MatrixCSR<double> transfer_matrix(sparsity_pattern,
-                                        la::BlockMode::compact);
-  // transfer_matrix.set(1);
-
-  auto mesh_from = mesh_coarse;
-  auto mesh_to = mesh_fine;
-  for (int dof_from = 0;
-       dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
-  {
-    int32_t dof_to = from_to_map[dof_from];
-
-    auto to_v_to_f = mesh_to.topology()->connectivity(0, 1);
-    for (auto e : to_v_to_f->links(dof_to))
-    {
-      auto to_f_to_v = mesh_to.topology()->connectivity(1, 0);
-      for (auto n : to_f_to_v->links(e))
-      {
-        double value = n == dof_to ? 1 : .5;
-        transfer_matrix.set<1, 1>(std::vector<double>{value},
-                                  std::vector<int32_t>{dof_from},
-                                  std::vector<int32_t>{n});
-      }
-    }
-  }
+  la::MatrixCSR<double> transfer_matrix
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
 
   std::vector<double> expected{1.0, .5, 0, 0, 0, 0,  .5, 1,
                                .5,  0,  0, 0, 0, .5, 1};
   CHECK_THAT(transfer_matrix.to_dense(),
              RangeEquals(expected, [](auto a, auto b)
                          { return std::abs(a - b) <= EPS<T>; }));
-  // for (int i = 0; i < transfer_matrix.index_map(0)->size_local(); i++)
-  // {
-  //   for (int j = 0; j < transfer_matrix.index_map(1)->size_local(); j++)
-  //   {
-  //     std::cout << dense[i * transfer_matrix.index_map(1)->size_local() + j]
-  //               << " ";
-  //   }
-  //   std::cout << "\n";
-  // }
 }
 
-TEST_CASE("Transfer Matrix 2D", "transfer_matrix")
+TEST_CASE("Transfer Matrix 2D", "[transfer_matrix]")
 {
   using T = double;
 
@@ -191,15 +85,6 @@ TEST_CASE("Transfer Matrix 2D", "transfer_matrix")
       *mesh_coarse, std::nullopt, redistribute, mesh::GhostMode::none,
       refinement::Option::parent_cell);
 
-  std::cout << "parent_cell = ";
-  for (auto pc : parent_cell.value())
-    std::cout << pc << ", ";
-  std::cout << std::endl;
-
-  // std::cout << "parent_facet = ";
-  // for (auto pc : parent_facet.value())
-  //   std::cout << pc << ", ";
-  // std::cout << std::endl;
 
   auto element = basix::create_element<double>(
       basix::element::family::P, basix::cell::type::triangle, 1,
@@ -215,35 +100,10 @@ TEST_CASE("Transfer Matrix 2D", "transfer_matrix")
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
-  std::vector<int32_t> from_to_map{4, 1, 5, 8};
+  std::vector<int32_t> from_to_map{4, 1, 5, 8}; // TODO: general computation!
 
-  auto sparsity_pattern
-      = create_sparsity<double>(*V_coarse, *V_fine, from_to_map);
-
-  la::MatrixCSR<double> transfer_matrix(sparsity_pattern,
-                                        la::BlockMode::compact);
-  // transfer_matrix.set(1);
-
-  auto mesh_from = mesh_coarse;
-  auto mesh_to = mesh_fine;
-  for (int dof_from = 0;
-       dof_from < mesh_from->topology()->index_map(0)->size_local(); dof_from++)
-  {
-    int32_t dof_to = from_to_map[dof_from];
-
-    auto to_v_to_f = mesh_to.topology()->connectivity(0, 1);
-    for (auto e : to_v_to_f->links(dof_to))
-    {
-      auto to_f_to_v = mesh_to.topology()->connectivity(1, 0);
-      for (auto n : to_f_to_v->links(e))
-      {
-        double value = n == dof_to ? 1 : .5;
-        transfer_matrix.set<1, 1>(std::vector<double>{value},
-                                  std::vector<int32_t>{dof_from},
-                                  std::vector<int32_t>{n});
-      }
-    }
-  }
+    la::MatrixCSR<double> transfer_matrix
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
 
   std::vector<double> expected{0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 0.5, 0.0, 0.0,
                                0.5, 1.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
