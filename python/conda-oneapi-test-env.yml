@@ -7,7 +7,7 @@ channels:
 dependencies:
   - intelpython3_core
   - python=3.10
-  - dpcpp_linux-64
+  - dpcpp_linux-64=2024.1.0
   - mkl
   - libblas=*=*mkl
   - mpich
