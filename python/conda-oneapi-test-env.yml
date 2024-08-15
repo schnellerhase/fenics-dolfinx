@@ -5,7 +5,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - intelpython3_core=2024.1.0
+  - intelpython3_core=2024.0
   - python=3.9
   - dpcpp_linux-64=2024.1.0
   - mkl
