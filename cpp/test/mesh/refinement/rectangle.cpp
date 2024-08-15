@@ -29,8 +29,6 @@
 using namespace dolfinx;
 using namespace Catch::Matchers;
 
-template <typename T>
-constexpr auto EPS = std::numeric_limits<T>::epsilon();
 
 TEMPLATE_TEST_CASE("Rectangle uniform refinement",
                    "refinement,rectangle,uniform", double) // TODO: fix float

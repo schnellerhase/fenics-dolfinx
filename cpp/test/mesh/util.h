@@ -12,6 +12,9 @@
 #include <dolfinx/graph/AdjacencyList.h>
 
 template <typename T>
+constexpr auto EPS = std::numeric_limits<T>::epsilon();
+
+template <typename T>
 void CHECK_adjacency_list_equal(
     const dolfinx::graph::AdjacencyList<T>& adj_list,
     const std::vector<std::vector<T>>& expected_list)

@@ -4,12 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <catch2/matchers/catch_matchers.hpp>
-#include <limits>
 #include <optional>
+#include <span>
 
 #include <mpi.h>
 
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
@@ -20,7 +20,6 @@
 #include <dolfinx/mesh/utils.h>
 #include <dolfinx/refinement/interval.h>
 #include <dolfinx/refinement/refine.h>
-#include <span>
 
 using namespace dolfinx;
 using namespace Catch::Matchers;

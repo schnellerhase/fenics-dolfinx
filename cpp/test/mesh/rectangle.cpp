@@ -28,9 +28,6 @@
 using namespace dolfinx;
 using namespace Catch::Matchers;
 
-template <typename T>
-constexpr auto EPS = std::numeric_limits<T>::epsilon();
-
 TEMPLATE_TEST_CASE("Rectangle quadrilateral mesh",
                    "[mesh][rectangle][quadrilateral]", float, double)
 {

@@ -24,11 +24,10 @@
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/transfer/transfer_matrix.h>
 
+#include "../mesh/util.h"
+
 using namespace dolfinx;
 using namespace Catch::Matchers;
-
-template <typename T>
-constexpr auto EPS = std::numeric_limits<T>::epsilon();
 
 TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]")
 {
