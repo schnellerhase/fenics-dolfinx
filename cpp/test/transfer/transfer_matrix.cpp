@@ -20,6 +20,7 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/generation.h>
+#include <dolfinx/mesh/utils.h>
 #include <dolfinx/refinement/plaza.h>
 #include <dolfinx/refinement/refine.h>
 #include <dolfinx/transfer/transfer_matrix.h>
@@ -67,6 +68,75 @@ TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]")
   CHECK_THAT(transfer_matrix.to_dense(),
              RangeEquals(expected, [](auto a, auto b)
                          { return std::abs(a - b) <= EPS<T>; }));
+}
+
+TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]")
+{
+  using T = double;
+
+  int comm_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
+
+  auto mesh_coarse = std::make_shared<mesh::Mesh<T>>(
+      mesh::create_interval<T>(MPI_COMM_WORLD, 5 * comm_size - 1, {0., 1.},
+                               mesh::GhostMode::shared_facet));
+
+  auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
+      *mesh_coarse, std::nullopt, true, mesh::GhostMode::shared_facet,
+      refinement::Option::none);
+
+  auto element = basix::create_element<double>(
+      basix::element::family::P, basix::cell::type::interval, 1,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+
+  auto V_coarse = std::make_shared<fem::FunctionSpace<double>>(
+      fem::create_functionspace<double>(mesh_coarse, element, {}));
+  auto V_fine = std::make_shared<fem::FunctionSpace<double>>(
+      fem::create_functionspace<double>(
+          std::make_shared<mesh::Mesh<double>>(mesh_fine), element, {}));
+
+  mesh_fine.topology()->create_connectivity(1, 0);
+  mesh_fine.topology()->create_connectivity(0, 1);
+
+  std::array<std::vector<int32_t>, 2> from_to_map
+      = {{{0, 2, 4, 6, 8, 10}, {0, 4, 6, 8, 10}}}; // TODO: general computation!
+
+  la::MatrixCSR<double> transfer_matrix
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map[rank]);
+
+  //   auto dense = transfer_matrix.to_dense();
+  //   auto cols = transfer_matrix.index_map(1)->size_global();
+  //   for (int row = 0; row < transfer_matrix.num_all_rows(); row++)
+  //   {
+  //     std::cout << rank << " ";
+  //     for (std::int32_t col = 0; col < cols; col++)
+  //     {
+  //       std::cout << dense[row * cols + col] << ", ";
+  //     }
+  //     std::cout << "\n";
+  //   }
+  //   std::cout << std::endl;
+
+  // clang-format off
+  std::array<std::vector<double>, 2> expected{{{/* row_0 */ 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_1 */ 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_2 */ 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+                                               {/* row_0 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0,
+                                                    /* row_2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0,
+                                                    /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0,
+                                                    /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                    /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}}};
+  // clang-format on
+  CHECK_THAT(transfer_matrix.to_dense(),
+             RangeEquals(expected[rank], [](auto a, auto b)
+                         { return std::abs(a - b) <= EPS<T>; }));
+  // TODO: fix ghost cell interaction!
 }
 
 TEST_CASE("Transfer Matrix 2D", "[transfer_matrix]")
