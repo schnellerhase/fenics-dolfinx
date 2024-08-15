@@ -43,9 +43,9 @@ add_executable(
   mesh/distributed_mesh.cpp
   mesh/rectangle.cpp
   common/CIFailure.cpp
-  refinement/interval.cpp
-  refinement/option.cpp
-  refinement/rectangle.cpp
+  mesh/refinement/interval.cpp
+  mesh/refinement/option.cpp
+  mesh/refinement/rectangle.cpp
   transfer/transfer_matrix.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
