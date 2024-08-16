@@ -58,7 +58,7 @@ TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]")
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
-  std::vector<int32_t> from_to_map{0, 2, 4}; // TODO: general computation!
+  std::vector<std::int64_t> from_to_map{0, 2, 4}; // TODO: general computation!
 
   la::MatrixCSR<double> transfer_matrix
       = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
@@ -99,11 +99,10 @@ TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]")
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
-  std::array<std::vector<int32_t>, 2> from_to_map
-      = {{{0, 2, 4, 6, 8, 10}, {0, 4, 6, 8, 10}}}; // TODO: general computation!
+  std::vector<int64_t> from_to_map{0, 2, 4, 6, 8, 10, 12, 14, 16, 18};
 
   la::MatrixCSR<double> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map[rank]);
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
 
   //   auto dense = transfer_matrix.to_dense();
   //   auto cols = transfer_matrix.index_map(1)->size_global();
@@ -120,23 +119,23 @@ TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]")
 
   // clang-format off
   std::array<std::vector<double>, 2> expected{{{/* row_0 */ 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_1 */ 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_2 */ 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-                                               {/* row_0 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0,
-                                                    /* row_2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0,
-                                                    /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0,
-                                                    /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                                    /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}}};
+                                                /* row_1 */ 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                /* row_2 */ 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                /* row_6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+                                               {/* row_0 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                /* row_1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0,
+                                                /* row_2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0,
+                                                /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0,
+                                                /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}}};
   // clang-format on
+
   CHECK_THAT(transfer_matrix.to_dense(),
              RangeEquals(expected[rank], [](auto a, auto b)
                          { return std::abs(a - b) <= EPS<T>; }));
-  // TODO: fix ghost cell interaction!
 }
 
 TEST_CASE("Transfer Matrix 2D", "[transfer_matrix]")
@@ -168,7 +167,8 @@ TEST_CASE("Transfer Matrix 2D", "[transfer_matrix]")
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
-  std::vector<int32_t> from_to_map{4, 1, 5, 8}; // TODO: general computation!
+  std::vector<std::int64_t> from_to_map{4, 1, 5,
+                                        8}; // TODO: general computation!
 
   la::MatrixCSR<double> transfer_matrix
       = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
@@ -212,8 +212,8 @@ TEST_CASE("Transfer Matrix 3D", "[transfer_matrix]")
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
-  std::vector<int32_t> from_to_map{0,  6, 15, 25,
-                                   17, 9, 11, 22}; // TODO: general computation!
+  std::vector<std::int64_t> from_to_map{
+      0, 6, 15, 25, 17, 9, 11, 22}; // TODO: general computation!
 
   la::MatrixCSR<double> transfer_matrix
       = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
