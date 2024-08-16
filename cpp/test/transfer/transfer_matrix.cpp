@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <concepts>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -30,6 +31,9 @@
 
 using namespace dolfinx;
 using namespace Catch::Matchers;
+
+template<std::floating_point T>
+constexpr auto weight =  [](std::int32_t d) -> T { return d == 0 ? 1. : .5;};
 
 TEMPLATE_TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]", double) // TODO: float
 {
@@ -62,7 +66,7 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]", double) // TODO: f
   std::vector<std::int64_t> from_to_map{0, 2, 4}; // TODO: general computation!
 
   la::MatrixCSR<T> transfer_matrix
-      = transfer::create_transfer_matrix<T>(*V_coarse, *V_fine, from_to_map);
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
 
   std::vector<T> expected{1.0, .5, 0, 0, 0, 0, .5, 1, .5, 0, 0, 0, 0, .5, 1};
   CHECK_THAT(transfer_matrix.to_dense(),
@@ -106,7 +110,7 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]",
   std::vector<int64_t> from_to_map{0, 2, 4, 6, 8, 10, 12, 14, 16, 18};
 
   la::MatrixCSR<T> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
 
   //   auto dense = transfer_matrix.to_dense();
   //   auto cols = transfer_matrix.index_map(1)->size_global();
@@ -175,7 +179,7 @@ TEST_CASE("Transfer Matrix 2D", "[transfer_matrix]")
                                         8}; // TODO: general computation!
 
   la::MatrixCSR<double> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
 
   std::vector<double> expected{0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 0.5, 0.0, 0.0,
                                0.5, 1.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -220,7 +224,7 @@ TEST_CASE("Transfer Matrix 3D", "[transfer_matrix]")
       0, 6, 15, 25, 17, 9, 11, 22}; // TODO: general computation!
 
   la::MatrixCSR<double> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map);
+      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
 
   std::vector<double> expected{
       1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

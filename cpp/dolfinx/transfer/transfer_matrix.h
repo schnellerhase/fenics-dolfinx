@@ -6,11 +6,14 @@
 
 #pragma once
 
+#include <concepts>
+#include <cstdint>
+#include <vector>
+
+#include "dolfinx/common/IndexMap.h"
 #include "dolfinx/fem/FunctionSpace.h"
 #include "dolfinx/la/MatrixCSR.h"
 #include "dolfinx/la/SparsityPattern.h"
-#include <cstdint>
-#include <vector>
 
 namespace dolfinx::transfer
 {
@@ -63,21 +66,25 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
   assert(to_f_to_v);
 
   for (int global_dof_from = 0;
-       global_dof_from < mesh_from->topology()->index_map(0)->size_global(); global_dof_from++)
+       global_dof_from < mesh_from->topology()->index_map(0)->size_global();
+       global_dof_from++)
   {
     // std::vector<int64_t> global_dof_from{0};
-    // mesh_from->topology()->index_map(0)->local_to_global(std::vector<std::int32_t>{dof_from}, global_dof_from);
+    // mesh_from->topology()->index_map(0)->local_to_global(std::vector<std::int32_t>{dof_from},
+    // global_dof_from);
     std::int64_t global_dof_to = from_to_map[global_dof_from];
 
     std::vector<std::int32_t> local_dof_to_v{0};
-    mesh_to->topology()->index_map(0)->global_to_local(std::vector<std::int64_t>{global_dof_to}, local_dof_to_v);
+    mesh_to->topology()->index_map(0)->global_to_local(
+        std::vector<std::int64_t>{global_dof_to}, local_dof_to_v);
 
     auto local_dof_to = local_dof_to_v[0];
     if (local_dof_to == -1)
       continue;
 
     std::vector<std::int32_t> dof_from_v{0};
-    mesh_from->topology()->index_map(0)->global_to_local(std::vector<std::int64_t>{global_dof_from}, dof_from_v);
+    mesh_from->topology()->index_map(0)->global_to_local(
+        std::vector<std::int64_t>{global_dof_from}, dof_from_v);
     for (auto e : to_v_to_f->links(local_dof_to))
       for (auto n : to_f_to_v->links(e))
         sp.insert(std::vector<int32_t>{dof_from_v[0]}, std::vector<int32_t>{n});
@@ -88,70 +95,61 @@ create_sparsity(const dolfinx::fem::FunctionSpace<U>& V_from,
 
 } // anonymous namespace
 
-template <typename T>
+template <std::floating_point T, typename F>
+  requires std::invocable<F&, std::int32_t>
 la::MatrixCSR<T>
 create_transfer_matrix(const dolfinx::fem::FunctionSpace<T>& V_from,
                        const dolfinx::fem::FunctionSpace<T>& V_to,
-                       const std::vector<std::int64_t>& from_to_map)
+                       const std::vector<std::int64_t>& from_to_map, F weight)
 {
-  la::SparsityPattern sp = create_sparsity(V_from, V_to, from_to_map);
-
-  la::MatrixCSR<double> transfer_matrix(sp, la::BlockMode::compact);
+  la::MatrixCSR<double> transfer_matrix(
+      create_sparsity(V_from, V_to, from_to_map), la::BlockMode::compact);
 
   auto mesh_from = V_from.mesh();
   auto mesh_to = V_to.mesh();
-    for (int global_dof_from = 0;
-       global_dof_from < mesh_from->topology()->index_map(0)->size_global(); global_dof_from++)
-  {
-    //   std::vector<int64_t> global_dof_from{0};
-    // mesh_from->topology()->index_map(0)->local_to_global(std::vector<std::int32_t>{dof_from}, global_dof_from);
-    std::int64_t global_dof_to = from_to_map[global_dof_from];
-
-    std::vector<std::int32_t> local_dof_to_v{0};
-    mesh_to->topology()->index_map(0)->global_to_local(std::vector<std::int64_t>{global_dof_to}, local_dof_to_v);
-
-    auto local_dof_to = local_dof_to_v[0];
-    if ((local_dof_to == -1) || local_dof_to >= mesh_to->topology()->index_map(0)->size_local())
-      continue;
-    
-    std::vector<std::int32_t> dof_from_v{0};
-    mesh_from->topology()->index_map(0)->global_to_local(std::vector<std::int64_t>{global_dof_from}, dof_from_v);
-
-    auto to_v_to_f = mesh_to->topology()->connectivity(0, 1);
-    for (auto e : to_v_to_f->links(local_dof_to))
-    {
-      auto to_f_to_v = mesh_to->topology()->connectivity(1, 0);
-      for (auto n : to_f_to_v->links(e))
-      {
-        double value = n == local_dof_to ? 1 : .5;
-        transfer_matrix.set<1, 1>(std::vector<double>{value},
-                                  std::vector<int32_t>{dof_from_v[0]},
-                                  std::vector<int32_t>{n});
-      }
-    }
-  }
+  assert(mesh_from);
+  assert(mesh_to);
 
   auto to_v_to_f = mesh_to->topology()->connectivity(0, 1);
   auto to_f_to_v = mesh_to->topology()->connectivity(1, 0);
   assert(to_v_to_f);
   assert(to_f_to_v);
 
-  // for (int dof_from = 0;
-  //      dof_from < mesh_from->topology()->index_map(0)->size_local() + mesh_from->topology()->index_map(0)->num_ghosts(); dof_from++)
-  // {
-  //   int32_t dof_to = from_to_map[dof_from];
+  const common::IndexMap& im_to = *mesh_to->topology()->index_map(0);
+  const common::IndexMap& im_from = *mesh_from->topology()->index_map(0);
 
-  //   for (auto e : to_v_to_f->links(dof_to))
-  //   {
-  //     for (auto n : to_f_to_v->links(e))
-  //     {
-  //       double value = n == dof_to ? 1 : .5;
-  //       transfer_matrix.set<1, 1>(std::vector<double>{value},
-  //                                 std::vector<int32_t>{dof_from},
-  //                                 std::vector<int32_t>{n});
-  //     }
-  //   }
-  // }
+  for (int dof_from_global = 0; dof_from_global < im_from.size_global();
+       dof_from_global++)
+  {
+    std::int64_t dof_to_global = from_to_map[dof_from_global];
+
+    std::vector<std::int32_t> local_dof_to_v{0};
+    im_to.global_to_local(std::vector<std::int64_t>{dof_to_global},
+                          local_dof_to_v);
+
+    auto local_dof_to = local_dof_to_v[0];
+
+    bool is_remote = (local_dof_to == -1);
+    bool is_ghost = local_dof_to >= im_to.size_local();
+    if (is_remote || is_ghost)
+      continue;
+
+    std::vector<std::int32_t> dof_from_v{0};
+    im_from.global_to_local(std::vector<std::int64_t>{dof_from_global},
+                            dof_from_v);
+
+    for (auto e : to_v_to_f->links(local_dof_to))
+    {
+      for (auto n : to_f_to_v->links(e))
+      {
+        // double value = n == local_dof_to ? 1 : .5;
+        std::int32_t distance = (n == local_dof_to) ? 0 : 1;
+        transfer_matrix.set<1, 1>(std::vector<double>{weight(distance)},
+                                  std::vector<int32_t>{dof_from_v[0]},
+                                  std::vector<int32_t>{n});
+      }
+    }
+  }
 
   transfer_matrix.scatter_rev();
   return transfer_matrix;
