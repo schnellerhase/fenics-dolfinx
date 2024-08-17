@@ -106,27 +106,39 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]",
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
-  std::vector<int64_t> from_to_map
-      = (comm_size == 1)
-            ? std::vector<int64_t>{0, 2, 4, 6, 8}
-            : std::vector<int64_t>{0, 2, 4, 6, 8, 10, 12, 14, 16, 18};
+  std::vector<int64_t> from_to_map;
+  switch (comm_size)
+  {
+  case 1:
+    from_to_map = {0, 2, 4, 6, 8};
+    break;
+  case 2:
+    from_to_map = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18};
+    break;
+  case 3:
+    // TODO: this is wrong! DIfferently paralleized
+    from_to_map = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28};
+    break;
+  }
 
   la::MatrixCSR<T> transfer_matrix = transfer::create_transfer_matrix(
       *V_coarse, *V_fine, from_to_map, weight<T>);
 
-//   auto dense = transfer_matrix.to_dense();
-//   auto cols = transfer_matrix.index_map(1)->size_global();
-//   for (int row = 0; row < transfer_matrix.num_all_rows(); row++)
-//   {
-//     std::cout << rank << " ";
-//     for (std::int32_t col = 0; col < cols; col++)
-//     {
-//       std::cout << dense[row * cols + col] << ", ";
-//     }
-//     std::cout << "\n";
-//   }
-//   std::cout << std::endl;
-
+  if (rank == 1)
+  {
+    auto dense = transfer_matrix.to_dense();
+    auto cols = transfer_matrix.index_map(1)->size_global();
+    for (int row = 0; row < transfer_matrix.num_all_rows(); row++)
+    {
+      //   std::cout << rank << " ";
+      for (std::int32_t col = 0; col < cols; col++)
+      {
+        std::cout << dense[row * cols + col] << ", ";
+      }
+      std::cout << "\n";
+    }
+    std::cout << std::endl;
+  }
   std::array<std::vector<T>, 3> expected;
   if (comm_size == 1)
   {
@@ -162,9 +174,15 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]",
     };
     // clang-format on
   }
-  else
+  else if (comm_size == 3)
   {
     // TODO: add comm_size == 3 case
+    // expected[0] = {
+    // };
+    CHECK(false);
+  }
+  else
+  {
     CHECK(false);
   }
 
