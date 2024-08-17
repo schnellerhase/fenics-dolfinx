@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <catch2/matchers/catch_matchers.hpp>
 #include <concepts>
 #include <cstdint>
 #include <memory>
@@ -32,10 +33,11 @@
 using namespace dolfinx;
 using namespace Catch::Matchers;
 
-template<std::floating_point T>
-constexpr auto weight =  [](std::int32_t d) -> T { return d == 0 ? 1. : .5;};
+template <std::floating_point T>
+constexpr auto weight = [](std::int32_t d) -> T { return d == 0 ? 1. : .5; };
 
-TEMPLATE_TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]", double) // TODO: float
+TEMPLATE_TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]",
+                   double) // TODO: float
 {
   using T = TestType;
 
@@ -65,8 +67,8 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]", double) // TODO: f
 
   std::vector<std::int64_t> from_to_map{0, 2, 4}; // TODO: general computation!
 
-  la::MatrixCSR<T> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
+  la::MatrixCSR<T> transfer_matrix = transfer::create_transfer_matrix(
+      *V_coarse, *V_fine, from_to_map, weight<T>);
 
   std::vector<T> expected{1.0, .5, 0, 0, 0, 0, .5, 1, .5, 0, 0, 0, 0, .5, 1};
   CHECK_THAT(transfer_matrix.to_dense(),
@@ -81,9 +83,6 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]",
 
   int comm_size = dolfinx::MPI::size(MPI_COMM_WORLD);
   int rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
-
-  if (comm_size != 2)
-    return;
 
   auto mesh_coarse = std::make_shared<mesh::Mesh<T>>(
       mesh::create_interval<T>(MPI_COMM_WORLD, 5 * comm_size - 1, {0., 1.},
@@ -107,39 +106,67 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]",
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
 
-  std::vector<int64_t> from_to_map{0, 2, 4, 6, 8, 10, 12, 14, 16, 18};
+  std::vector<int64_t> from_to_map
+      = (comm_size == 1)
+            ? std::vector<int64_t>{0, 2, 4, 6, 8}
+            : std::vector<int64_t>{0, 2, 4, 6, 8, 10, 12, 14, 16, 18};
 
-  la::MatrixCSR<T> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
+  la::MatrixCSR<T> transfer_matrix = transfer::create_transfer_matrix(
+      *V_coarse, *V_fine, from_to_map, weight<T>);
 
-  //   auto dense = transfer_matrix.to_dense();
-  //   auto cols = transfer_matrix.index_map(1)->size_global();
-  //   for (int row = 0; row < transfer_matrix.num_all_rows(); row++)
-  //   {
-  //     std::cout << rank << " ";
-  //     for (std::int32_t col = 0; col < cols; col++)
-  //     {
-  //       std::cout << dense[row * cols + col] << ", ";
-  //     }
-  //     std::cout << "\n";
-  //   }
-  //   std::cout << std::endl;
+//   auto dense = transfer_matrix.to_dense();
+//   auto cols = transfer_matrix.index_map(1)->size_global();
+//   for (int row = 0; row < transfer_matrix.num_all_rows(); row++)
+//   {
+//     std::cout << rank << " ";
+//     for (std::int32_t col = 0; col < cols; col++)
+//     {
+//       std::cout << dense[row * cols + col] << ", ";
+//     }
+//     std::cout << "\n";
+//   }
+//   std::cout << std::endl;
 
-  // clang-format off
-  std::array<std::vector<T>, 2> expected{{{/* row_0 */ 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_1 */ 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_2 */ 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-                                          {/* row_0 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0,
-                                           /* row_2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0,
-                                           /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0,
-                                           /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}}};
-  // clang-format on
+  std::array<std::vector<T>, 3> expected;
+  if (comm_size == 1)
+  {
+    // clang-format off
+        expected[0]= {
+            /* row_0 */ 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            /* row_1 */ 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
+            /* row_2 */ 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0,
+            /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0,
+            /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0
+        };
+    // clang-format on
+  }
+  else if (comm_size == 2)
+  {
+    // clang-format off
+    expected[0] = {
+        /* row_0 */ 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_1 */ 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_2 */ 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_6 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    };
+    expected[1] = {
+        /* row_0 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_1 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0,
+        /* row_2 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0,
+        /* row_3 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0,
+        /* row_4 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        /* row_5 */ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    };
+    // clang-format on
+  }
+  else
+  {
+    // TODO: add comm_size == 3 case
+    CHECK(false);
+  }
 
   CHECK_THAT(transfer_matrix.to_dense(),
              RangeEquals(expected[rank], [](auto a, auto b)
@@ -178,8 +205,8 @@ TEST_CASE("Transfer Matrix 2D", "[transfer_matrix]")
   std::vector<std::int64_t> from_to_map{4, 1, 5,
                                         8}; // TODO: general computation!
 
-  la::MatrixCSR<double> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
+  la::MatrixCSR<double> transfer_matrix = transfer::create_transfer_matrix(
+      *V_coarse, *V_fine, from_to_map, weight<T>);
 
   std::vector<double> expected{0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 0.5, 0.0, 0.0,
                                0.5, 1.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -223,8 +250,8 @@ TEST_CASE("Transfer Matrix 3D", "[transfer_matrix]")
   std::vector<std::int64_t> from_to_map{
       0, 6, 15, 25, 17, 9, 11, 22}; // TODO: general computation!
 
-  la::MatrixCSR<double> transfer_matrix
-      = transfer::create_transfer_matrix(*V_coarse, *V_fine, from_to_map, weight<T>);
+  la::MatrixCSR<double> transfer_matrix = transfer::create_transfer_matrix(
+      *V_coarse, *V_fine, from_to_map, weight<T>);
 
   std::vector<double> expected{
       1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

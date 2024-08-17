@@ -58,7 +58,8 @@ create_transfer_matrix(const dolfinx::fem::FunctionSpace<T>& V_from,
       comm, {dofmap_from->index_map, dofmap_to->index_map},
       {dofmap_from->index_map_bs(), dofmap_to->index_map_bs()});
 
- for (int dof_from_global = 0; dof_from_global < im_from.size_global();
+  assert(from_to_map.size() == im_from.size_global());
+  for (int dof_from_global = 0; dof_from_global < im_from.size_global();
        dof_from_global++)
   {
     std::int64_t dof_to_global = from_to_map[dof_from_global];
@@ -79,7 +80,8 @@ create_transfer_matrix(const dolfinx::fem::FunctionSpace<T>& V_from,
                             dof_from_v);
 
     for (auto e : to_v_to_f->links(local_dof_to))
-      sp.insert(std::vector<int32_t>(to_f_to_v->links(e).size(), dof_from_v[0]), to_f_to_v->links(e));
+      sp.insert(std::vector<int32_t>(to_f_to_v->links(e).size(), dof_from_v[0]),
+                to_f_to_v->links(e));
   }
   sp.finalize();
 
