@@ -879,20 +879,18 @@ std::span<const std::int64_t> IndexMap::ghosts() const noexcept
 void IndexMap::local_to_global(std::span<const std::int32_t> local,
                                std::span<std::int64_t> global) const
 {
+  assert((0 <= local.size()) && (local.size() <= global.size()));
   assert(local.size() <= global.size());
-  const std::int32_t local_size = _local_range[1] - _local_range[0];
-  std::ranges::transform(
-      local, global.begin(),
-      [local_size, local_range = _local_range[0], &ghosts = _ghosts](auto local)
-      {
-        if (local < local_size)
-          return local_range + local;
-        else
-        {
-          assert((local - local_size) < (int)ghosts.size());
-          return ghosts[local - local_size];
-        }
-      });
+
+  std::ranges::transform(local, global.begin(),
+                         [&](std::int32_t local) -> std::int64_t
+                         {
+                           assert((0 <= local)
+                                  && (local < size_local() + num_ghosts()));
+                           bool is_ghost = local >= _local_range[1];
+                           return is_ghost ? _ghosts[local - _local_range[0]]
+                                           : local + _local_range[0];
+                         });
 }
 //-----------------------------------------------------------------------------
 void IndexMap::global_to_local(std::span<const std::int64_t> global,
