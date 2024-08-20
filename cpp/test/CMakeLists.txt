@@ -41,6 +41,7 @@ add_executable(
   common/index_map.cpp
   common/sort.cpp
   mesh/distributed_mesh.cpp
+  mesh/rectangle.cpp
   common/CIFailure.cpp
   refinement/interval.cpp
   refinement/option.cpp
