@@ -313,8 +313,7 @@ def transfer_meshtag(
 def refine(
     mesh: Mesh,
     edges: typing.Optional[np.ndarray] = None,
-    redistribute: bool = True,
-    ghost_mode: GhostMode = GhostMode.shared_facet,
+    partitioner: typing.Optional[typing.Callable] = None,
     option: RefinementOption = RefinementOption.none,
 ) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int8]]:
     """Refine a mesh.
@@ -323,14 +322,15 @@ def refine(
         mesh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
             mesh refinement is uniform.
-        redistribute:
-            Refined mesh is re-partitioned if ``True``.
+        partitioner:
+            partitioner to use for the refined mesh, If ``None`` no redistribution is performed,
+            i.e. previous local mesh is equally parallelized now with new vertices.s
 
     Returns:
        Refined mesh.
     """
     mesh1, parent_cell, parent_facet = _cpp.refinement.refine(
-        mesh._cpp_object, edges, redistribute, ghost_mode, option
+        mesh._cpp_object, edges, partitioner, option
     )
     return Mesh(mesh1, mesh._ufl_domain), parent_cell, parent_facet
 

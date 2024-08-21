@@ -29,7 +29,6 @@
 using namespace dolfinx;
 using namespace Catch::Matchers;
 
-
 TEMPLATE_TEST_CASE("Rectangle uniform refinement",
                    "refinement,rectangle,uniform", double) // TODO: fix float
 {
@@ -82,9 +81,9 @@ plotter.show()
   // plaza requires the edges to be pre initialized!
   mesh.topology()->create_entities(1);
 
-  auto [mesh_fine, parent_cell, parent_facet]
-      = refinement::refine(mesh, std::nullopt, false, mesh::GhostMode::none,
-                           refinement::Option::parent_cell_and_facet);
+  auto [mesh_fine, parent_cell, parent_facet] = refinement::refine(
+      mesh, std::nullopt, mesh::create_cell_partitioner(mesh::GhostMode::none),
+      refinement::Option::parent_cell_and_facet);
 
   // vertex layout:
   // 8---7---5
