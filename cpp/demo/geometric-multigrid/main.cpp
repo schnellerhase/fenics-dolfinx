@@ -31,6 +31,7 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/generation.h>
 #include <dolfinx/mesh/utils.h>
+#include <dolfinx/refinement/refine.h>
 
 #include "poisson.h"
 
@@ -53,27 +54,25 @@ int main(int argc, char** argv)
   // PetscLogDefaultBegin();
 
   int n_coarse = 32; // also works with 1e6 !
-  int n_fine = 2 * n_coarse;
 
-  auto create_FEM_space = [](int n)
-  {
-    auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_vertex);
-    auto mesh
-        = std::make_shared<mesh::Mesh<U>>(dolfinx::mesh::create_interval<U>(
-            MPI_COMM_WORLD, n, {0.0, 1.0}, mesh::GhostMode::shared_vertex,
-            part));
-    auto element = basix::create_element<U>(
-        basix::element::family::P, basix::cell::type::interval, 1,
-        basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, false);
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace<U>(mesh, element, {}));
-    return std::make_pair<decltype(mesh), decltype(V)>(std::move(mesh),
-                                                       std::move(V));
-  };
+  auto element = basix::create_element<U>(
+      basix::element::family::P, basix::cell::type::interval, 1,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_vertex);
 
-  auto [mesh, V] = create_FEM_space(n_fine);
-  auto [mesh_coarse, V_coarse] = create_FEM_space(n_coarse);
+  auto mesh_coarse = std::make_shared<mesh::Mesh<U>>(
+      dolfinx::mesh::create_interval<U>(MPI_COMM_WORLD, n_coarse, {0.0, 1.0},
+                                        mesh::GhostMode::shared_vertex, part));
+
+  auto V_coarse = std::make_shared<fem::FunctionSpace<U>>(
+      fem::create_functionspace<U>(mesh_coarse, element, {}));
+
+  auto [mesh, parent_cells, parent_facets]
+      = dolfinx::refinement::refine(*mesh_coarse, std::nullopt);
+
+  auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace<U>(
+      std::make_shared<mesh::Mesh<U>>(mesh), element, {}));
 
   auto interpolate_f = [](auto V)
   {
@@ -189,7 +188,7 @@ int main(int argc, char** argv)
 
     // this shoud be quite overkill for the parallel case -> localize the value
     // setting and do not repeat!!!
-    for (int64_t idx = 0; idx < n_fine + 1; idx++)
+    for (int64_t idx = 0; idx < global_rows; idx++)
     {
       if (idx % 2 == 0)
       {
@@ -225,13 +224,13 @@ int main(int argc, char** argv)
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write<T>({*u}, 0.0);
 
-    io::XDMFFile file_xdmf(mesh->comm(), "u_xdmf.xdmf", "w");
-    file_xdmf.write_mesh(*mesh);
+    io::XDMFFile file_xdmf(mesh.comm(), "u_xdmf.xdmf", "w");
+    file_xdmf.write_mesh(mesh);
     file_xdmf.write_function(*u, 0.0);
     file_xdmf.close();
 
 #ifdef HAS_ADIOS2
-    io::VTXWriter<U> vtx_writer(mesh->comm(), std::filesystem::path("u_vtx.bp"),
+    io::VTXWriter<U> vtx_writer(mesh.comm(), std::filesystem::path("u_vtx.bp"),
                                 {u}, io::VTXMeshPolicy::reuse);
     vtx_writer.write(0);
 #endif
