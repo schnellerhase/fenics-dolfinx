@@ -1256,3 +1256,7 @@ def test_vector_types():
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
