@@ -282,6 +282,17 @@ void declare_function_space(nb::module_& m, std::string type)
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
+        .def("tabulate",
+             [](const dolfinx::fem::FiniteElement<T>& self,
+                nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x, int order)
+             {
+            //    std::array<size_t, 2> x_shape{x.shape(0), x.shape(1)};
+            //    std::span x_data(x.data(), x_shape[0] * x_shape[1]);
+               auto [values, values_shape]
+                   = self.tabulate(std::span(x.data(), x.size()), {x.shape(0), x.shape(1)}, order);
+               return dolfinx_wrappers::as_nbarray(
+                   std::move(values), values_shape.size(), values_shape.data());
+             })
         .def_prop_ro("needs_dof_transformations",
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
         .def("signature", &dolfinx::fem::FiniteElement<T>::signature);
