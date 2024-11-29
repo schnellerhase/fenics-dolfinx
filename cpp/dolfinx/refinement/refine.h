@@ -21,6 +21,49 @@
 
 namespace dolfinx::refinement
 {
+
+mesh::CellPartitionFunction
+create_maintain_coarse_partitioner(mesh::Mesh msh)
+{
+  auto ghostmode = msh.
+  if (ghostmode == mesh::GhostMode::none)
+  {
+    return [](MPI_Comm comm, int /*nparts*/,
+              std::vector<mesh::CellType> cell_types,
+              std::vector<std::span<const std::int64_t>> cells)
+               -> graph::AdjacencyList<std::int32_t>
+    {
+      int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
+      std::int32_t num_cells = cells.front().size() / num_cell_vertices;
+      std::vector<std::int32_t> destinations(num_cells,
+                                             dolfinx::MPI::rank(comm));
+      std::vector<std::int32_t> dest_offsets(num_cells + 1);
+      std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
+      return graph::AdjacencyList(std::move(destinations),
+                                  std::move(dest_offsets));
+    }
+  }
+  else{
+    return [](MPI_Comm comm, int /*nparts*/,
+              std::vector<mesh::CellType> cell_types,
+              std::vector<std::span<const std::int64_t>> cells)
+               -> graph::AdjacencyList<std::int32_t>
+    {
+      int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
+      std::int32_t num_cells = cells.front().size() / num_cell_vertices;
+      std::vector<std::int32_t> destinations(num_cells,
+                                             dolfinx::MPI::rank(comm));
+      std::vector<std::int32_t> dest_offsets(num_cells + 1);
+      std::iota(dest_offsets.begin(), dest_offsets.end(), 0);
+
+     compute_destination_ranks(comm, )
+
+      return graph::AdjacencyList(std::move(destinations),
+                                  std::move(dest_offsets));
+    }
+  }
+}
+
 /// @brief Refine a mesh with markers.
 ///
 /// The refined mesh can be optionally re-partitioned across processes.
@@ -56,8 +99,8 @@ std::tuple<mesh::Mesh<T>, std::optional<std::vector<std::int32_t>>,
            std::optional<std::vector<std::int8_t>>>
 refine(const mesh::Mesh<T>& mesh,
        std::optional<std::span<const std::int32_t>> edges,
-       const mesh::CellPartitionFunction& partitioner
-       = mesh::create_cell_partitioner(mesh::GhostMode::none),
+       std::optional<const mesh::CellPartitionFunction&> partitioner
+       = std::nullopt,
        Option option = Option::none)
 {
   auto topology = mesh.topology();
@@ -70,10 +113,20 @@ refine(const mesh::Mesh<T>& mesh,
             ? interval::compute_refinement_data(mesh, edges, option)
             : plaza::compute_refinement_data(mesh, edges, option);
 
+  
+  auto partitioner_fn = partitioner ? *partitioner : [&](MPI_Comm comm, int /*nparts*/,
+              std::vector<mesh::CellType> cell_types,
+              std::vector<std::span<const std::int64_t>> cells)
+               -> graph::AdjacencyList<std::int32_t>
+  {
+
+    compute_destination_ranks(comm, AdjacencyList<std::int32_t>(cells), )
+  };
+
   mesh::Mesh<T> mesh1 = mesh::create_mesh(
       mesh.comm(), mesh.comm(), cell_adj.array(), mesh.geometry().cmap(),
-      mesh.comm(), new_vertex_coords, xshape, partitioner);
-
+      mesh.comm(), new_vertex_coords, xshape, partitioner_fn);
+ 
   // Report the number of refined cells
   const int D = topology->dim();
   const std::int64_t n0 = topology->index_map(D)->size_global();
