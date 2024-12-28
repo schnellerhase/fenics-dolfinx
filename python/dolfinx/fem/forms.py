@@ -156,7 +156,7 @@ def get_integration_domains(
                 domains.append((id, integration_entities))
             return [(s[0], np.array(s[1])) for s in domains]
         except AttributeError:
-            return [(s[0], np.array(s[1])) for s in subdomain]  # type: ignore
+            return [(s[0], np.array(s[1])) for s in sorted(subdomain)]  # type: ignore
 
 
 def form_cpp_class(
@@ -244,7 +244,7 @@ def form(
 
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
-            assert all([d is data[0] for d in data])
+            assert all([d is data[0] for d in data if d is not None])
 
         mesh = domain.ufl_cargo()
         if mesh is None:

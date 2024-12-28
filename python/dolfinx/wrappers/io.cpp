@@ -12,6 +12,7 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/io/ADIOS2Writers.h>
 #include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/VTKHDF.h>
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/io/vtk_utils.h>
@@ -24,6 +25,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/filesystem.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
@@ -216,6 +218,17 @@ void io(nb::module_& m)
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
 
+  m.def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<double>)
+      .def("write_vtkhdf_mesh", &dolfinx::io::VTKHDF::write_mesh<float>);
+  m.def("read_vtkhdf_mesh_float64",
+        [](MPICommWrapper comm, std::string filename) {
+          return dolfinx::io::VTKHDF::read_mesh<double>(comm.get(), filename);
+        });
+  m.def("read_vtkhdf_mesh_float32",
+        [](MPICommWrapper comm, std::string filename) {
+          return dolfinx::io::VTKHDF::read_mesh<float>(comm.get(), filename);
+        });
+
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, nb::arg("type"),
         nb::arg("num_nodes"),
@@ -271,7 +284,8 @@ void io(nb::module_& m)
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           nb::arg("mesh"), nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
+           nb::arg("mesh"), nb::arg("name"), nb::arg("attribute_name").none(),
+           nb::arg("xpath"))
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
            nb::arg("name"), nb::arg("value"), nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_information", &dolfinx::io::XDMFFile::read_information,

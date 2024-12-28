@@ -32,7 +32,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_topological,
 )
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.element import CoordinateElement, coordinate_element
+from dolfinx.fem.element import CoordinateElement, FiniteElement, coordinate_element, finiteelement
 from dolfinx.fem.forms import (
     Form,
     compile_form,
@@ -91,7 +91,11 @@ def create_interpolation_data(
     """
     return _PointOwnershipData(
         _create_interpolation_data(
-            V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding
+            V_to.mesh._cpp_object.geometry,
+            V_to.element._cpp_object,
+            V_from.mesh._cpp_object,
+            cells,
+            padding,
         )
     )
 
@@ -164,36 +168,38 @@ def compute_integration_domains(
 
 __all__ = [
     "Constant",
-    "Expression",
-    "Function",
-    "ElementMetaData",
-    "create_matrix",
-    "compute_integration_domains",
-    "functionspace",
-    "FunctionSpace",
-    "create_sparsity_pattern",
-    "discrete_gradient",
-    "assemble_scalar",
-    "assemble_matrix",
-    "assemble_vector",
-    "apply_lifting",
+    "CoordinateElement",
     "DirichletBC",
-    "dirichletbc",
-    "bcs_by_block",
     "DofMap",
+    "ElementMetaData",
+    "Expression",
+    "FiniteElement",
     "Form",
-    "form",
+    "Function",
+    "FunctionSpace",
     "IntegralType",
+    "apply_lifting",
+    "assemble_matrix",
+    "assemble_scalar",
+    "assemble_vector",
+    "bcs_by_block",
+    "compile_form",
+    "compute_integration_domains",
+    "coordinate_element",
+    "create_form",
+    "create_interpolation_data",
+    "create_matrix",
+    "create_sparsity_pattern",
     "create_vector",
+    "dirichletbc",
+    "discrete_gradient",
+    "extract_function_spaces",
+    "finiteelement",
+    "form",
+    "form_cpp_class",
+    "functionspace",
     "locate_dofs_geometrical",
     "locate_dofs_topological",
-    "extract_function_spaces",
-    "transpose_dofmap",
-    "create_interpolation_data",
-    "CoordinateElement",
-    "coordinate_element",
-    "form_cpp_class",
-    "create_form",
-    "compile_form",
     "set_bc",
+    "transpose_dofmap",
 ]
