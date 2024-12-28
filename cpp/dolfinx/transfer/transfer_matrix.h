@@ -79,8 +79,7 @@ inclusion_mapping(const dolfinx::mesh::Mesh<T>& mesh_from,
   // other processes.
   std::vector<std::int64_t> result(map.size(), -1);
   MPI_Allreduce(map.data(), result.data(), map.size(),
-                dolfinx::MPI::mpi_type<std::int64_t>(), MPI_MAX,
-                mesh_from.comm());
+                dolfinx::MPI::mpi_t<std::int64_t>, MPI_MAX, mesh_from.comm());
 
   assert(std::ranges::all_of(result, [](auto e) { return e >= 0; }));
   return result;
