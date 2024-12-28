@@ -60,11 +60,14 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D", "[transfer_matrix]",
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
 
+  auto dolfinx_element
+      = std::make_shared<const fem::FiniteElement<double>>(element);
+
   auto V_coarse = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace<T>(mesh_coarse, element, {}));
+      fem::create_functionspace<T>(mesh_coarse, dolfinx_element));
   auto V_fine
       = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-          std::make_shared<mesh::Mesh<T>>(mesh_fine), element, {}));
+          std::make_shared<mesh::Mesh<T>>(mesh_fine), dolfinx_element));
 
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
@@ -159,12 +162,14 @@ TEMPLATE_TEST_CASE("Transfer Matrix 1D (parallel)", "[transfer_matrix]",
       basix::element::family::P, basix::cell::type::interval, 1,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
+  auto dolfinx_element
+      = std::make_shared<const fem::FiniteElement<double>>(element);
 
   auto V_coarse = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace<T>(mesh_coarse, element, {}));
+      fem::create_functionspace<T>(mesh_coarse, dolfinx_element));
   auto V_fine
       = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-          std::make_shared<mesh::Mesh<T>>(mesh_fine), element, {}));
+          std::make_shared<mesh::Mesh<T>>(mesh_fine), dolfinx_element));
 
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
@@ -288,11 +293,14 @@ TEMPLATE_TEST_CASE("Transfer Matrix 2D", "[transfer_matrix]", double)
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
 
+  auto dolfinx_element
+      = std::make_shared<const fem::FiniteElement<double>>(element);
+
   auto V_coarse = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace<T>(mesh_coarse, element, {}));
+      fem::create_functionspace<T>(mesh_coarse, dolfinx_element));
   auto V_fine
       = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-          std::make_shared<mesh::Mesh<T>>(mesh_fine), element, {}));
+          std::make_shared<mesh::Mesh<T>>(mesh_fine), dolfinx_element));
 
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
@@ -334,11 +342,14 @@ TEMPLATE_TEST_CASE("Transfer Matrix 3D", "[transfer_matrix]", double)
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
 
+  auto dolfinx_element
+      = std::make_shared<const fem::FiniteElement<double>>(element);
+
   auto V_coarse = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace<T>(mesh_coarse, element, {}));
+      fem::create_functionspace<T>(mesh_coarse, dolfinx_element));
   auto V_fine
       = std::make_shared<fem::FunctionSpace<T>>(fem::create_functionspace<T>(
-          std::make_shared<mesh::Mesh<T>>(mesh_fine), element, {}));
+          std::make_shared<mesh::Mesh<T>>(mesh_fine), dolfinx_element));
 
   mesh_fine.topology()->create_connectivity(1, 0);
   mesh_fine.topology()->create_connectivity(0, 1);
