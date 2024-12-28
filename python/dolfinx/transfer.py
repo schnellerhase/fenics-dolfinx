@@ -16,7 +16,7 @@ from dolfinx.cpp.transfer import inclusion_mapping as _inclusion_mapping
 from dolfinx.fem import FunctionSpace
 from dolfinx.mesh import Mesh
 
-__all__ = ["inclusion_mapping", "create_sparsity_pattern", "assemble_transfer_matrix"]
+__all__ = ["assemble_transfer_matrix", "create_sparsity_pattern", "inclusion_mapping"]
 
 
 def inclusion_mapping(mesh_from: Mesh, mesh_to: Mesh) -> NDArray[np.int64]:
