@@ -7,6 +7,8 @@
 #pragma once
 
 #include "Timer.h"
+#include "dolfinx/common/defines.h"
+#include "dolfinx/graph/AdjacencyList.h"
 #include "log.h"
 #include "types.h"
 #include <algorithm>
@@ -14,7 +16,7 @@
 #include <cassert>
 #include <complex>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
+#include <functional>
 #include <numeric>
 #include <set>
 #include <span>
@@ -81,6 +83,33 @@ int size(MPI_Comm comm);
 /// @param[in] comm MPI communicator.
 /// @param[in] code Error code returned by an MPI function call.
 void check_error(MPI_Comm comm, int code);
+
+/// @brief Facilitates the call to a MPI function. This performs an error code
+/// check when debug mode, i.e. ``has_debug()`` is set.
+/// @param mpi_function MPI function pointer.
+/// @param ...args Arguments to be forwarded to function.
+template <typename F, typename... T>
+void call(F&& mpi_function, T&&... args)
+{
+  int code = std::invoke(mpi_function, std::forward<T>(args)...);
+  if constexpr (has_debug())
+  {
+    // check_error(MPI_COMM_WORLD, code);
+    if (code != MPI_SUCCESS)
+    {
+      std::string error_string(MPI_MAX_ERROR_STRING, ' ');
+      {
+        int len;
+        MPI_Error_string(code, error_string.data(), &len);
+        error_string.resize(len);
+      }
+
+      spdlog::error(error_string);
+      MPI_Abort(MPI_COMM_WORLD, code);
+      std::abort();
+    }
+  }
+}
 
 /// @brief Return local range for the calling process, partitioning the
 /// global [0, N - 1] range across all ranks into partitions of almost
