@@ -220,10 +220,10 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
   std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
-  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
-                         send_disp.data(), compound_type, recv_buffer.data(),
-                         num_items_recv.data(), recv_disp.data(), compound_type,
-                         neigh_comm0);
+  dolfinx::MPI::call(MPI_Neighbor_alltoallv, send_buffer.data(),
+                     num_items_per_dest.data(), send_disp.data(), compound_type,
+                     recv_buffer.data(), num_items_recv.data(),
+                     recv_disp.data(), compound_type, neigh_comm0);
 
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm0);
