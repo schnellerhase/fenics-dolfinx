@@ -428,6 +428,99 @@ TEMPLATE_TEST_CASE("Rectangle triangle mesh (crossed)",
                                        /* e_7 */ {3, 4}});
 }
 
+TEMPLATE_TEST_CASE("Box prism mesh", "[mesh][box][prism]", float, double)
+{
+  using T = TestType;
+
+  mesh::Mesh<T> mesh
+      = dolfinx::mesh::create_box<T>(MPI_COMM_SELF, {{{0, 0, 0}, {1, 1, 1}}},
+                                     {1, 1, 1}, mesh::CellType::prism);
+
+  // front layout (z=0)
+  // 2---6
+  // |\  |
+  // | \ |
+  // |  \|
+  // 0---1
+
+  // front layout (z=1)
+  // 5---7
+  // |\  |
+  // | \ |
+  // |  \|
+  // 3---4
+  std::vector<T> expected_x = {
+      /* v_0 */ 0, 0, 0,
+      /* v_1 */ 1, 0, 0,
+      /* v_2 */ 0, 1, 0,
+      /* v_3 */ 0, 0, 1,
+      /* v_4 */ 1, 0, 1,
+      /* v_5 */ 0, 1, 1,
+      /* v_6 */ 1, 1, 0,
+      /* v_7 */ 1, 1, 1,
+  };
+
+  CHECK_THAT(mesh.geometry().x(),
+             RangeEquals(expected_x, [](auto a, auto b)
+                         { return std::abs(a - b) <= EPS<T>; }));
+
+  mesh.topology()->create_connectivity(1, 0);
+  auto e_to_v = mesh.topology()->connectivity(1, 0);
+  REQUIRE(e_to_v);
+
+  CHECK_adjacency_list_equal(*e_to_v, {/* e_0 */ {0, 1},
+                                       /* e_1 */ {0, 2},
+                                       /* e_2 */ {0, 3},
+                                       /* e_3 */ {1, 2},
+                                       /* e_4 */ {1, 4},
+                                       /* e_5 */ {1, 6},
+                                       /* e_6 */ {2, 5},
+                                       /* e_7 */ {2, 6},
+                                       /* e_8 */ {3, 4},
+                                       /* e_9 */ {3, 5},
+                                       /* e_10 */ {4, 5},
+                                       /* e_11 */ {4, 7},
+                                       /* e_12 */ {5, 7},
+                                       /* e_13 */ {6, 7}});
+
+  mesh.topology()->create_connectivity(2, 0);
+  auto f_to_v = mesh.topology()->connectivity(2, 0);
+  REQUIRE(f_to_v);
+
+  CHECK_adjacency_list_equal(
+      *f_to_v, {
+                   /* f_0 */ {0, 1, 3, 4},
+                   /* f_1 */ {0, 2, 3, 5},
+                   /* f_2 */ {1, 2, 4, 5},
+                   /* f_3 */ {1, 4, 6, 7},
+                   /* f_4 */ {2, 5, 6, 7},
+                   // TODO: this is missing the triangle faces, see
+                   // https://github.com/FEniCS/dolfinx/issues/3603
+               });
+
+  mesh.topology()->create_connectivity(2, 1);
+  auto f_to_e = mesh.topology()->connectivity(2, 1);
+  REQUIRE(f_to_e);
+
+  CHECK_adjacency_list_equal(
+      *f_to_e, {
+                   /* f_0 */ {0, 2, 4, 8},
+                   /* f_1 */ {1, 2, 6, 9},
+                   /* f_2 */ {3, 4, 6, 10},
+                   /* f_3 */ {4, 5, 11, 13},
+                   /* f_4 */ {6, 7, 12, 13}
+                   // TODO: this is missing the triangle faces, see
+                   // https://github.com/FEniCS/dolfinx/issues/3603
+               });
+
+  mesh.topology()->create_connectivity(3, 0);
+  auto c_to_v = mesh.topology()->connectivity(3, 0);
+  REQUIRE(c_to_v);
+
+  CHECK_adjacency_list_equal(
+      *c_to_v, {/* c_0 */ {0, 1, 2, 3, 4, 5}, /* c_1 */ {1, 2, 6, 4, 5, 7}});
+}
+
 TEMPLATE_TEST_CASE("Box hexahedron mesh", "[mesh][box][hexahedron]", float,
                    double)
 {
