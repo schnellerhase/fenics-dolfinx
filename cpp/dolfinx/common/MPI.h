@@ -82,6 +82,19 @@ int size(MPI_Comm comm);
 /// @param[in] code Error code returned by an MPI function call.
 void check_error(MPI_Comm comm, int code);
 
+/// @brief Facilitates the call to a MPI function. This performs an error code
+/// check when NDEBUG is not set.
+/// @param mpi_function MPI function pointer.
+/// @param ...args Arguments to be forwarded to function.
+template <typename F, typename... T>
+void call(F&& mpi_function, T&&... args)
+{
+  [[maybe_unused]] int code = mpi_function(std::forward<T>(args)...);
+#ifndef NDEBUG
+  check_error(MPI_COMM_WORLD, code);
+#endif
+}
+
 /// @brief Return local range for the calling process, partitioning the
 /// global [0, N - 1] range across all ranks into partitions of almost
 /// equal size.
