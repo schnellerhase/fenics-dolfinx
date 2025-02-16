@@ -259,7 +259,7 @@ class Mesh:
     _geometry: Geometry
     _ufl_domain: typing.Optional[ufl.Mesh]
 
-    def __init__(self, msh, domain: typing.Optional[ufl.Mesh]):
+    def __init__(self, msh, domain: typing.Optional[ufl.Mesh] = None):
         """Initialize mesh from a C++ mesh.
 
         Args:
