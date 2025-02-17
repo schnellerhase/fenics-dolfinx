@@ -12,6 +12,7 @@
 #include "utils.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -22,7 +23,7 @@ namespace dolfinx::fem::impl
 {
 /// Assemble functional over cells
 template <dolfinx::scalar T>
-T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
+T assemble_cells(DofMapSpan x_dofmap, std::span<const scalar_value_t<T>> x,
                  std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants, std::span<const T> coeffs,
                  int cstride)
@@ -32,7 +33,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     return value;
 
   // Create data structures used in assembly
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over all cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -40,8 +41,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -58,8 +58,8 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
 
 /// Execute kernel over exterior facets and accumulate result
 template <dolfinx::scalar T>
-T assemble_exterior_facets(mdspan2_t x_dofmap,
-                           std::span<const scalar_value_type_t<T>> x,
+T assemble_exterior_facets(DofMapSpan x_dofmap,
+                           std::span<const scalar_value_t<T>> x,
                            int num_facets_per_cell,
                            std::span<const std::int32_t> facets,
                            FEkernel<T> auto fn, std::span<const T> constants,
@@ -71,7 +71,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     return value;
 
   // Create data structures used in assembly
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over all facets
   assert(facets.size() % 2 == 0);
@@ -81,8 +81,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -102,8 +101,8 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
 
 /// Assemble functional over interior facets
 template <dolfinx::scalar T>
-T assemble_interior_facets(mdspan2_t x_dofmap,
-                           std::span<const scalar_value_type_t<T>> x,
+T assemble_interior_facets(DofMapSpan x_dofmap,
+                           std::span<const scalar_value_t<T>> x,
                            int num_facets_per_cell,
                            std::span<const std::int32_t> facets,
                            FEkernel<T> auto fn, std::span<const T> constants,
@@ -116,7 +115,7 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
     return value;
 
   // Create data structures used in assembly
-  using X = scalar_value_type_t<T>;
+  using X = scalar_value_t<T>;
   std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(coordinate_dofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(coordinate_dofs.data() + x_dofmap.extent(1) * 3,
@@ -134,15 +133,13 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -165,8 +162,8 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
 /// Assemble functional into an scalar with provided mesh geometry.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(
-    const fem::Form<T, U>& M, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
+    const fem::Form<T, U>& M, DofMapSpan x_dofmap,
+    std::span<const scalar_value_t<T>> x, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {

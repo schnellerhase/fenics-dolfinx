@@ -35,7 +35,7 @@ namespace dolfinx::fem
 /// @tparam T The scalar type
 /// @tparam U The mesh geometry scalar type
 template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+          std::floating_point U = dolfinx::scalar_value_t<T>>
 class Expression
 {
 public:
@@ -242,8 +242,7 @@ public:
     for (std::size_t e = 0; e < entities.size() / estride; ++e)
     {
       std::int32_t entity = entities[e * estride];
-      auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          x_dofmap, entity, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto x_dofs = md::submdspan(x_dofmap, entity, md::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
         std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
