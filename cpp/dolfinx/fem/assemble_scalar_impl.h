@@ -12,6 +12,7 @@
 #include "utils.h"
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -22,7 +23,7 @@ namespace dolfinx::fem::impl
 {
 /// Assemble functional over cells
 template <dolfinx::scalar T>
-T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_t<T>> x,
+T assemble_cells(DofMapSpan x_dofmap, std::span<const scalar_value_t<T>> x,
                  std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants, std::span<const T> coeffs,
                  int cstride)
@@ -58,7 +59,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_t<T>> x,
 
 /// Execute kernel over exterior facets and accumulate result
 template <dolfinx::scalar T>
-T assemble_exterior_facets(mdspan2_t x_dofmap,
+T assemble_exterior_facets(DofMapSpan x_dofmap,
                            std::span<const scalar_value_t<T>> x,
                            int num_facets_per_cell,
                            std::span<const std::int32_t> facets,
@@ -102,7 +103,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
 
 /// Assemble functional over interior facets
 template <dolfinx::scalar T>
-T assemble_interior_facets(mdspan2_t x_dofmap,
+T assemble_interior_facets(DofMapSpan x_dofmap,
                            std::span<const scalar_value_t<T>> x,
                            int num_facets_per_cell,
                            std::span<const std::int32_t> facets,
@@ -165,7 +166,7 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
 /// Assemble functional into an scalar with provided mesh geometry.
 template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(
-    const fem::Form<T, U>& M, mdspan2_t x_dofmap,
+    const fem::Form<T, U>& M, DofMapSpan x_dofmap,
     std::span<const scalar_value_t<T>> x, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
