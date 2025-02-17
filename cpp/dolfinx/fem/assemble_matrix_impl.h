@@ -60,7 +60,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 template <dolfinx::scalar T>
 void assemble_cells(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x,
+    std::span<const scalar_value_t<T>> x,
     std::span<const std::int32_t> cells,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
@@ -84,7 +84,7 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::span<T> _Ae(Ae);
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over active cells
   assert(cells0.size() == cells.size());
@@ -194,7 +194,7 @@ void assemble_cells(
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, int num_facets_per_cell,
+    std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
@@ -213,7 +213,7 @@ void assemble_exterior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
+  std::vector<scalar_value_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
@@ -333,7 +333,7 @@ void assemble_exterior_facets(
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, int num_facets_per_cell,
+    std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
     std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
@@ -352,7 +352,7 @@ void assemble_interior_facets(
   const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
-  using X = scalar_value_type_t<T>;
+  using X = scalar_value_t<T>;
   std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
   std::span<X> cdofs0(coordinate_dofs.data(), x_dofmap.extent(1) * 3);
   std::span<X> cdofs1(coordinate_dofs.data() + x_dofmap.extent(1) * 3,
@@ -493,7 +493,7 @@ void assemble_interior_facets(
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a,
-    std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
+    std::span<const scalar_value_t<T>> x, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
