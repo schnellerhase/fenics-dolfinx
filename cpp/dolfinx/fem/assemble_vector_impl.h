@@ -17,6 +17,7 @@
 #include <basix/mdspan.hpp>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -25,15 +26,8 @@
 #include <optional>
 #include <span>
 #include <vector>
-
 namespace dolfinx::fem::impl
 {
-/// @cond
-using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-/// @endcond
-
 /// @brief Apply boundary condition lifting for cell integrals.
 /// @tparam T The scalar type.
 /// @tparam _bs0 The block size of the form test function dof map. If
@@ -73,12 +67,11 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @param[in] alpha Scaling to apply.
 template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
-    std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_t<T>> x, FEkernel<T> auto kernel,
-    std::span<const std::int32_t> cells,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::span<T> b, DofMapSpan x_dofmap, std::span<const scalar_value_t<T>> x,
+    FEkernel<T> auto kernel, std::span<const std::int32_t> cells,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
@@ -260,12 +253,12 @@ void _lift_bc_cells(
 /// permutations are not required.
 template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
-    std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
-    FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::span<T> b, DofMapSpan x_dofmap, std::span<const scalar_value_t<T>> x,
+    int num_facets_per_cell, FEkernel<T> auto kernel,
+    std::span<const std::int32_t> facets,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
@@ -409,12 +402,12 @@ void _lift_bc_exterior_facets(
 /// @param[in] alpha The scaling to apply
 template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_interior_facets(
-    std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
-    FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::span<T> b, DofMapSpan x_dofmap, std::span<const scalar_value_t<T>> x,
+    int num_facets_per_cell, FEkernel<T> auto kernel,
+    std::span<const std::int32_t> facets,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
@@ -631,10 +624,9 @@ void _lift_bc_interior_facets(
 /// mesh
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_cells(
-    fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_t<T>> x,
-    std::span<const std::int32_t> cells,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
+    fem::DofTransformKernel<T> auto P0, std::span<T> b, DofMapSpan x_dofmap,
+    std::span<const scalar_value_t<T>> x, std::span<const std::int32_t> cells,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap,
     FEkernel<T> auto kernel, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0)
@@ -717,10 +709,10 @@ void assemble_cells(
 /// permutations are not required.
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_exterior_facets(
-    fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
+    fem::DofTransformKernel<T> auto P0, std::span<T> b, DofMapSpan x_dofmap,
     std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap,
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
@@ -813,7 +805,7 @@ void assemble_exterior_facets(
 /// permutations are not required.
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_interior_facets(
-    fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
+    fem::DofTransformKernel<T> auto P0, std::span<T> b, DofMapSpan x_dofmap,
     std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
     std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap,
@@ -925,9 +917,8 @@ void assemble_interior_facets(
 /// solution' in a Newton method
 /// @param[in] alpha Scaling to apply
 template <dolfinx::scalar T, std::floating_point U>
-void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
-             std::span<const scalar_value_t<T>> x,
-             std::span<const T> constants,
+void lift_bc(std::span<T> b, const Form<T, U>& a, DofMapSpan x_dofmap,
+             std::span<const scalar_value_t<T>> x, std::span<const T> constants,
              const std::map<std::pair<IntegralType, int>,
                             std::pair<std::span<const T>, int>>& coefficients,
              std::span<const T> bc_values1,
@@ -1104,7 +1095,7 @@ void apply_lifting(
       std::shared_ptr<const mesh::Mesh<U>> mesh = a[j]->get().mesh();
       if (!mesh)
         throw std::runtime_error("Unable to extract a mesh.");
-      mdspan2_t x_dofmap = mesh->geometry().dofmap();
+      DofMapSpan x_dofmap = mesh->geometry().dofmap();
       auto x = mesh->geometry().x();
 
       assert(a[j]->get().function_spaces().at(0));
@@ -1145,8 +1136,8 @@ void apply_lifting(
 /// @param[in] coefficients Packed coefficients that appear in `L`.
 template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
-    std::span<T> b, const Form<T, U>& L,
-    std::span<const scalar_value_t<T>> x, std::span<const T> constants,
+    std::span<T> b, const Form<T, U>& L, std::span<const scalar_value_t<T>> x,
+    std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -1162,7 +1153,7 @@ void assemble_vector(
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     // Geometry dofmap and data
-    mdspan2_t x_dofmap = mesh->geometry().dofmap(cell_type_idx);
+    DofMapSpan x_dofmap = mesh->geometry().dofmap(cell_type_idx);
 
     // Get dofmap data
     assert(L.function_spaces().at(0));
@@ -1189,27 +1180,28 @@ void assemble_vector(
       auto fn = L.kernel(IntegralType::cell, i, cell_type_idx);
       assert(fn);
       auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-      std::vector<std::int32_t> cells = L.domain(IntegralType::cell, i, cell_type_idx);
+      std::vector<std::int32_t> cells
+          = L.domain(IntegralType::cell, i, cell_type_idx);
       if (bs == 1)
       {
         impl::assemble_cells<T, 1>(
             P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
-            coeffs, cstride, cell_info0);
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0);
       }
       else if (bs == 3)
       {
         impl::assemble_cells<T, 3>(
             P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
-            coeffs, cstride, cell_info0);
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0);
       }
       else
       {
         impl::assemble_cells(
             P0, b, x_dofmap, x, cells,
-            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)}, fn, constants,
-            coeffs, cstride, cell_info0);
+            {dofs, bs, L.domain(IntegralType::cell, i, cell_type_idx, *mesh0)},
+            fn, constants, coeffs, cstride, cell_info0);
       }
     }
 
