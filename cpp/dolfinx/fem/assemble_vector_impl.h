@@ -100,8 +100,7 @@ void _lift_bc_cells(
     std::int32_t c1 = cells1[index];
 
     // Get dof maps for cell
-    auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap1, c1, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs1 = md::submdspan(dmap1, c1, md::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -137,8 +136,7 @@ void _lift_bc_cells(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -146,8 +144,7 @@ void _lift_bc_cells(
     }
 
     // Size data structure for assembly
-    auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap0, c0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs0 = md::submdspan(dmap0, c0, md::full_extent);
 
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
@@ -291,8 +288,7 @@ void _lift_bc_exterior_facets(
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
-    auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap1, cell1, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs1 = md::submdspan(dmap1, cell1, md::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -312,8 +308,7 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -321,8 +316,7 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap0, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs0 = md::submdspan(dmap0, cell0, md::full_extent);
 
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
@@ -450,15 +444,13 @@ void _lift_bc_interior_facets(
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -650,8 +642,7 @@ void assemble_cells(
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, c, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -665,8 +656,7 @@ void assemble_cells(
     P0(_be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap, c0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = md::submdspan(dmap, c0, md::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -741,8 +731,7 @@ void assemble_exterior_facets(
     std::int32_t cell0 = facets0[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = md::submdspan(x_dofmap, cell, md::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -761,8 +750,7 @@ void assemble_exterior_facets(
     P0(_be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = md::submdspan(dmap, cell0, md::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -841,15 +829,13 @@ void assemble_interior_facets(
                                             facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = md::submdspan(x_dofmap, cells[0], md::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = md::submdspan(x_dofmap, cells[1], md::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
