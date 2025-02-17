@@ -12,6 +12,7 @@
 #include "traits.h"
 #include "utils.h"
 #include <algorithm>
+#include <dolfinx/common/types.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -24,11 +25,6 @@
 
 namespace dolfinx::fem::impl
 {
-/// @brief Typedef
-using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-
 /// @brief Execute kernel over cells and accumulate result in matrix.
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
@@ -59,12 +55,11 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// mesh
 template <dolfinx::scalar T>
 void assemble_cells(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    std::span<const scalar_value_t<T>> x,
-    std::span<const std::int32_t> cells,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    la::MatSet<T> auto mat_set, DofMapSpan x_dofmap,
+    std::span<const scalar_value_t<T>> x, std::span<const std::int32_t> cells,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const T> constants,
@@ -193,12 +188,12 @@ void assemble_cells(
 /// permutations are not required.
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
+    la::MatSet<T> auto mat_set, DofMapSpan x_dofmap,
     std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::tuple<DofMapSpan, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const T> constants,
@@ -332,7 +327,7 @@ void assemble_exterior_facets(
 /// permutations are not required.
 template <dolfinx::scalar T>
 void assemble_interior_facets(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
+    la::MatSet<T> auto mat_set, DofMapSpan x_dofmap,
     std::span<const scalar_value_t<T>> x, int num_facets_per_cell,
     std::span<const std::int32_t> facets,
     std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap0,
@@ -520,7 +515,7 @@ void assemble_matrix(
   for (int cell_type_idx = 0; cell_type_idx < num_cell_types; ++cell_type_idx)
   {
     // Geometry dofmap and data
-    mdspan2_t x_dofmap = mesh->geometry().dofmap(cell_type_idx);
+    DofMapSpan x_dofmap = mesh->geometry().dofmap(cell_type_idx);
 
     // Get dofmap data
     std::shared_ptr<const fem::DofMap> dofmap0
