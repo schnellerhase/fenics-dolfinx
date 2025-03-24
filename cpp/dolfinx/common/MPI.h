@@ -78,6 +78,7 @@ int rank(MPI_Comm comm);
 /// communicator.
 int size(MPI_Comm comm);
 
+// TODO: this can/should be removed then.
 /// @brief Check MPI error code. If the error code is not equal to
 /// MPI_SUCCESS, then std::abort is called.
 /// @param[in] comm MPI communicator.
