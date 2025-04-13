@@ -37,7 +37,7 @@ def parse(package):
         "-l": "libraries",
     }
 
-    result = {x: [] for x in parse_map.values()}
+    result: dict[str, list[str]] = {x: [] for x in parse_map.values()}
 
     # Execute the query to pkg-config and clean the result
     out = _pkgconfig_query(package + " --cflags --libs")[1]
