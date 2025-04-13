@@ -57,11 +57,11 @@ jobs:
           ruff check .
           ruff format --check .
       - name: mypy checks
+        working-directory: python
         run: |
-          cd python/
           mypy dolfinx
-          mypy demo
           mypy test
+          mypy demo
       - name: clang-format C++ checks
         run: |
           cd cpp
@@ -226,8 +226,13 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test,ci]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
+
+      - name: mypy checks
+        working-directory: python
+        run: mypy dolfinx/
+        # TODO: activate test/ and demo/
 
       - name: Set default DOLFINx JIT options
         run: |
