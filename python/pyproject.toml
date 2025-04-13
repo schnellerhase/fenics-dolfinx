@@ -77,7 +77,7 @@ markers = [
 # Goal would be to make all of the below True long-term
 disallow_untyped_defs = false
 disallow_any_unimported = false
-no_implicit_optional = false
+no_implicit_optional = true
 check_untyped_defs = false
 warn_return_any = false
 warn_unused_ignores = false
