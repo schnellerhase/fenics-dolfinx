@@ -221,7 +221,7 @@ def dirichletbc(
         _value = value
     else:
         try:
-            _value = value._cpp_object  # type: ignore
+            _value = value._cpp_object
         except AttributeError:
             _value = value
 

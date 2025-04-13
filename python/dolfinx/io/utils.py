@@ -101,7 +101,7 @@ if _cpp.common.has_adios2:
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(
                     comm, filename, _extract_cpp_objects(output), engine, mesh_policy
-                )  # type: ignore[arg-type]
+                )
 
         def __enter__(self):
             return self
