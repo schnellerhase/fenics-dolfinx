@@ -277,7 +277,7 @@ class Mesh:
         self._geometry = Geometry(self._cpp_object.geometry)
         self._ufl_domain = domain
         if self._ufl_domain is not None:
-            self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
+            self._ufl_domain._ufl_cargo = self._cpp_object
 
     @property
     def comm(self):
@@ -786,7 +786,7 @@ def create_interval(
             shape=(1,),
             dtype=dtype,
         )
-    )  # type: ignore
+    )
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
     elif np.issubdtype(dtype, np.float64):
@@ -864,7 +864,7 @@ def create_rectangle(
             shape=(2,),
             dtype=dtype,
         )
-    )  # type: ignore
+    )
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif np.issubdtype(dtype, np.float64):
@@ -952,7 +952,7 @@ def create_box(
             shape=(3,),
             dtype=dtype,
         )
-    )  # type: ignore
+    )
     if np.issubdtype(dtype, np.float32):
         msh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
     elif np.issubdtype(dtype, np.float64):

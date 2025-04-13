@@ -87,12 +87,12 @@ class Form:
 
     @property
     def rank(self) -> int:
-        return self._cpp_object.rank  # type: ignore
+        return self._cpp_object.rank
 
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces  # type: ignore
+        return self._cpp_object.function_spaces
 
     @property
     def dtype(self) -> np.dtype:
@@ -438,7 +438,7 @@ def form(
 
 def extract_function_spaces(
     forms: typing.Union[
-        typing.Iterable[Form],  # type: ignore [return]
+        typing.Iterable[Form],
         typing.Iterable[typing.Iterable[Form]],
     ],
     index: int = 0,
@@ -528,7 +528,7 @@ def compile_form(
     p_ffcx = ffcx.get_options(form_compiler_options)
     p_jit = jit.get_options(jit_options)
     ufcx_form, module, code = jit.ffcx_jit(comm, form, p_ffcx, p_jit)
-    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]  # type: ignore
+    scalar_type: npt.DTypeLike = p_ffcx["scalar_type"]
     return CompiledForm(form, ufcx_form, module, code, scalar_type)
 
 
