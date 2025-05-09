@@ -11,7 +11,6 @@ import collections
 import types
 import typing
 from dataclasses import dataclass
-from itertools import chain
 
 import numpy as np
 import numpy.typing as npt
@@ -87,12 +86,12 @@ class Form:
 
     @property
     def rank(self) -> int:
-        return self._cpp_object.rank  # type: ignore
+        return self._cpp_object.rank
 
     @property
     def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined."""
-        return self._cpp_object.function_spaces  # type: ignore
+        return self._cpp_object.function_spaces
 
     @property
     def dtype(self) -> np.dtype:
@@ -348,7 +347,7 @@ def form(
         constants = [c._cpp_object for c in form.constants()]
 
         # Make map from integral_type to subdomain id
-        subdomain_ids = {type: [] for type in sd.get(domain).keys()}
+        subdomain_ids: dict[IntegralType, list[int]] = {type: [] for type in sd.get(domain).keys()}
         for integral in form.integrals():
             if integral.subdomain_data() is not None:
                 # Subdomain ids can be strings, its or tuples with
@@ -361,13 +360,11 @@ def form(
                         ids = [integral.subdomain_id()]
                 else:
                     ids = []
-                subdomain_ids[integral.integral_type()].append(ids)
+                subdomain_ids[integral.integral_type()].extend(ids)
 
-        # Chain and sort subdomain ids
-        for itg_type, marker_ids in subdomain_ids.items():
-            flattened_ids = list(chain.from_iterable(marker_ids))
-            flattened_ids.sort()
-            subdomain_ids[itg_type] = flattened_ids
+        # sort subdomain ids
+        for ids in subdomain_ids.values():
+            ids.sort()
 
         # Subdomain markers (possibly empty list for some integral
         # types)
@@ -438,7 +435,7 @@ def form(
 
 def extract_function_spaces(
     forms: typing.Union[
-        typing.Iterable[Form],  # type: ignore [return]
+        typing.Iterable[Form],
         typing.Iterable[typing.Iterable[Form]],
     ],
     index: int = 0,

@@ -349,9 +349,9 @@ class Function(ufl.Coefficient):
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         if x is not None:
-            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)  # type: ignore
+            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)
         else:
-            self._cpp_object = functiontype(dtype)(V._cpp_object)  # type: ignore
+            self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space())
@@ -404,7 +404,7 @@ class Function(ufl.Coefficient):
             value_size = self._V.value_size
             u = np.empty((num_points, value_size), self.dtype)
 
-        self._cpp_object.eval(_x, _cells, u)  # type: ignore
+        self._cpp_object.eval(_x, _cells, u)
         if num_points == 1:
             u = np.reshape(u, (-1,))
         return u
@@ -423,7 +423,7 @@ class Function(ufl.Coefficient):
                 defined on other meshes. Created by
                 :func:`dolfinx.fem.create_interpolation_data`.
         """
-        self._cpp_object.interpolate(u0._cpp_object, cells, interpolation_data._cpp_object)  # type: ignore
+        self._cpp_object.interpolate(u0._cpp_object, cells, interpolation_data._cpp_object)
 
     def interpolate(
         self,
@@ -454,22 +454,22 @@ class Function(ufl.Coefficient):
         @singledispatch
         def _interpolate(u0):
             """Interpolate a cpp.fem.Function."""
-            self._cpp_object.interpolate(u0, cells0, cells1)  # type: ignore
+            self._cpp_object.interpolate(u0, cells0, cells1)
 
         @_interpolate.register(Function)
         def _(u0: Function):
             """Interpolate a fem.Function."""
-            self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore
+            self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)
 
         @_interpolate.register(int)
         def _(u0_ptr: int):
             """Interpolate using a pointer to a function f(x)."""
-            self._cpp_object.interpolate_ptr(u0_ptr, cells0)  # type: ignore
+            self._cpp_object.interpolate_ptr(u0_ptr, cells0)
 
         @_interpolate.register(Expression)
         def _(e0: Expression):
             """Interpolate a fem.Expression."""
-            self._cpp_object.interpolate(e0._cpp_object, cells0, cells1)  # type: ignore
+            self._cpp_object.interpolate(e0._cpp_object, cells0, cells1)
 
         try:
             # u is a Function or Expression (or pointer to one)
@@ -480,7 +480,7 @@ class Function(ufl.Coefficient):
             x = _cpp.fem.interpolation_coords(
                 self._V.element._cpp_object, self._V.mesh.geometry._cpp_object, cells0
             )
-            self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
+            self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)
 
     def copy(self) -> Function:
         """Create a copy of the Function.
@@ -507,7 +507,7 @@ class Function(ufl.Coefficient):
     @property
     def name(self) -> str:
         """Name of the Function."""
-        return self._cpp_object.name  # type: ignore
+        return self._cpp_object.name
 
     @name.setter
     def name(self, name):
@@ -552,10 +552,10 @@ class Function(ufl.Coefficient):
         return tuple(self.sub(i) for i in range(num_sub_spaces))
 
     def collapse(self) -> Function:
-        u_collapsed = self._cpp_object.collapse()  # type: ignore
+        u_collapsed = self._cpp_object.collapse()
         V_collapsed = FunctionSpace(
             self.function_space._mesh,
-            self.ufl_element(),  # type: ignore
+            self.ufl_element(),
             u_collapsed.function_space,
         )
         return Function(V_collapsed, la.Vector(u_collapsed.x))
@@ -671,11 +671,11 @@ class FunctionSpace(ufl.FunctionSpace):
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
                 self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
-            )  # type: ignore
+            )
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
                 self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
-            )  # type: ignore
+            )
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
@@ -699,12 +699,12 @@ class FunctionSpace(ufl.FunctionSpace):
         """
         assert self.ufl_element().num_sub_elements > i
         sub_element = self.ufl_element().sub_elements[i]
-        cppV_sub = self._cpp_object.sub([i])  # type: ignore
+        cppV_sub = self._cpp_object.sub([i])
         return FunctionSpace(self._mesh, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""
-        return self._cpp_object.component()  # type: ignore
+        return self._cpp_object.component()
 
     def contains(self, V) -> bool:
         """Check if a space is contained in, or is the same as
@@ -717,7 +717,7 @@ class FunctionSpace(ufl.FunctionSpace):
            `` True`` if ``V`` is contained in, or is the same as, this
            space.
         """
-        return self._cpp_object.contains(V._cpp_object)  # type: ignore
+        return self._cpp_object.contains(V._cpp_object)
 
     def __eq__(self, other):
         """Comparison for equality."""
@@ -739,7 +739,7 @@ class FunctionSpace(ufl.FunctionSpace):
     @property
     def dofmap(self) -> dofmap.DofMap:
         """Degree-of-freedom map associated with the function space."""
-        return dofmap.DofMap(self._cpp_object.dofmap)  # type: ignore
+        return dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
     def mesh(self) -> Mesh:
@@ -754,7 +754,7 @@ class FunctionSpace(ufl.FunctionSpace):
             A new function space and the map from new to old
             degrees-of-freedom.
         """
-        cpp_space, dofs = self._cpp_object.collapse()  # type: ignore
+        cpp_space, dofs = self._cpp_object.collapse()
         V = FunctionSpace(self._mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
@@ -768,4 +768,4 @@ class FunctionSpace(ufl.FunctionSpace):
             This method is only for elements with point evaluation
             degrees-of-freedom.
         """
-        return self._cpp_object.tabulate_dof_coordinates()  # type: ignore
+        return self._cpp_object.tabulate_dof_coordinates()
