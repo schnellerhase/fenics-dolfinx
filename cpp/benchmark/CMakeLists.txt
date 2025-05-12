@@ -15,14 +15,14 @@ include(FetchContent)
 FetchContent_Declare(
   gtest
   GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG v1.15.0
+  GIT_TAG v1.17.0
 )
 FetchContent_MakeAvailable(gtest)
 
 FetchContent_Declare(
   benchmark
   GIT_REPOSITORY https://github.com/google/benchmark.git 
-  GIT_TAG v1.8.5
+  GIT_TAG v1.9.3
 )
 FetchContent_MakeAvailable(benchmark)
 
