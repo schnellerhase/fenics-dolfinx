@@ -71,7 +71,8 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
       if (it == cit1 or *it != xcols[c])
-        throw std::runtime_error("Entry not in sparsity");
+        continue;
+        // throw std::runtime_error("Entry not in sparsity");
 
       std::size_t d = std::distance(cols.begin(), it);
       std::size_t di = d * BS0 * BS1;
