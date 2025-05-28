@@ -31,7 +31,17 @@ def get_petsc_lib() -> pathlib.Path:
 
     petsc_dir = _petsc4py.get_config()["PETSC_DIR"]
     petsc_arch = _petsc4py.lib.getPathArchPETSc()[1]
+    try:
+        if np.issubdtype(_petsc4py.PETSc.ScalarType, np.complexfloating):
+            scalar_type = "complex"
+        else:
+            scalar_type = "real"
+    except AttributeError:
+        # if petsc4py.PETSc is not available, read type from petsc_dir
+        scalar_type = "complex" if "complex" in petsc_dir else "real"
+
     candidate_paths = [
+        os.path.join(petsc_dir, petsc_arch, "lib", f"libpetsc_{scalar_type}.so"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
         os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"),
     ]
