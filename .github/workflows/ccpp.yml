@@ -105,8 +105,12 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python build dependencies
+        working-directory: python
         run: |
-          pip install --upgrade -r python/build-requirements.txt
+          pip install pip-tools
+          pip-compile --all-build-deps --only-build-deps --strip-extras pyproject.toml -o build-requirements.txt
+          pip install --upgrade -r build-requirements.txt
+          rm build-requirements.txt
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -222,7 +226,12 @@ jobs:
           ctest --output-on-failure -V -R demo -R mpi_2
 
       - name: Install Python build dependencies
-        run: pip install -r python/build-requirements.txt
+        working-directory: python
+        run: |
+          pip install pip-tools
+          pip-compile --all-build-deps --only-build-deps --strip-extras pyproject.toml -o build-requirements.txt
+          pip install --upgrade -r build-requirements.txt
+          rm build-requirements.txtrequirements.txt
 
       - name: Build Python interface
         run: |

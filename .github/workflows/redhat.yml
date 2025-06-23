@@ -64,11 +64,16 @@ jobs:
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
-      - name: Install Python dependencies
+      - name: Install Python build dependencies
+        working-directory: python
         run: |
+          pip install pip-tools
+          pip-compile --all-build-deps --only-build-deps --strip-extras pyproject.toml -o build-requirements.txt
+          pip install --upgrade -r build-requirements.txt
+          rm build-requirements.txt
+
       - name: Build Python interface (editable install)
         run: |
-          python3 -m pip install --upgrade -r python/build-requirements.txt
           python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e 'python/[test]'
 
       - name: Set default DOLFINx JIT options

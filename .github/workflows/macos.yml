@@ -97,9 +97,16 @@ jobs:
           cd build/test
           mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
+      - name: Install Python build dependencies
+        working-directory: python
+        run: |
+          pip install pip-tools
+          pip-compile --all-build-deps --only-build-deps --strip-extras pyproject.toml -o build-requirements.txt
+          pip install --upgrade -r build-requirements.txt
+          rm build-requirements.txt
+
       - name: Build and install DOLFINx Python interface
         run: |
-          python -m pip install -r python/build-requirements.txt
           python -m pip install --check-build-dependencies --no-build-isolation 'python/[test]'
 
       - name: Basic test
