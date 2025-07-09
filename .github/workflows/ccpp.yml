@@ -56,12 +56,12 @@ jobs:
           cd python/
           ruff check .
           ruff format --check .
-      - name: mypy checks
-        run: |
-          cd python/
-          mypy dolfinx
-          mypy demo
-          mypy test
+      # - name: mypy checks
+      #   working-directory: python
+      #   run: |
+      #     mypy dolfinx
+      #     mypy test
+      #     mypy demo
       - name: clang-format C++ checks
         run: |
           cd cpp
@@ -76,6 +76,57 @@ jobs:
         continue-on-error: true
         run: |
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+
+  mypy:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    container: "ghcr.io/fenics/test-env:current-openmpi"
+    env:
+      PETSC_ARCH: linux-gnu-real64-32
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+
+    name: MyPy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load environment variables
+        run: cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+
+      - name: Install Python build dependencies
+        run: pip install --upgrade -r python/build-requirements.txt
+
+      - name: Install FEniCS Python components (default branches/tags)
+        run: |
+          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+
+      - name: Configure and install C++
+        run: |
+          cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake --build build
+          cmake --install build
+
+      - name: Build Python interface
+        run: >
+          pip install 'python/[test,ci]'
+          --check-build-dependencies
+          --no-build-isolation
+          --config-settings=cmake.build-type="Debug"
+
+      - name: MyPy (package)
+        working-directory: python
+        run: mypy -p dolfinx
+      
+      - name: MyPy (test)
+        working-directory: python
+        run: mypy test/unit/
+      
+      - name: MyPy (demo)
+        working-directory: python
+        run: mypy demo/
 
   build:
     runs-on: ubuntu-24.04
@@ -234,7 +285,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test]'
+          pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[test,ci]'
           python -c "from mpi4py import MPI; import dolfinx; assert dolfinx.has_adios2; assert dolfinx.has_kahip; assert not dolfinx.has_parmetis; assert dolfinx.has_petsc; assert dolfinx.has_petsc4py; assert dolfinx.has_ptscotch; assert dolfinx.has_slepc; assert dolfinx.has_complex_ufcx_kernels"
 
       - name: Set default DOLFINx JIT options
