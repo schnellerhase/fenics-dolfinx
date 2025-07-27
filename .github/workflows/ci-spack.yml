@@ -199,9 +199,9 @@ jobs:
 
       - name: Install FEniCS Python components
         run: |
-          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
-          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
-          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+          pip install git+https://github.com/fenics/ufl.git@main
+          pip install git+https://github.com/fenics/basix.git@main
+          pip install git+https://github.com/fenics/ffcx.git@main
 
       - name: Configure and build C++
         run: |
