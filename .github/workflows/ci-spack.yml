@@ -166,9 +166,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          choco install python --version=3.10.8 -y
-          choco install 7zip -y
-          choco install curl -y
+          choco install 7zip curl python -y
 
       - name: Add Python to PATH
         run: |
@@ -190,9 +188,10 @@ jobs:
         run: |
           spack --version
 
-      # - name: Try to install a package (cmake)
-      #   run: |
-      #     spack install cmake
+      - name: Install spack dependencies
+        run: |
+          spack install openblas
+
       - name: Load environment variables
         run: |
           cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
