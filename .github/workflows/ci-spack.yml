@@ -190,13 +190,21 @@ jobs:
         run: |
           spack --version
 
-      - name: Bootstrap Spack (optional)
-        run: |
-          spack bootstrap now
+      # - name: Try to install a package (cmake)
+      #   run: |
+      #     spack install cmake
 
-      - name: Try to install a package (cmake)
+      - name: Install FEniCS Python components
         run: |
-          spack install cmake
+          pip install git+https://github.com/fenics/ufl.git@${{ env.ufl_ref }}
+          pip install git+https://github.com/fenics/basix.git@${{ env.basix_ref }}
+          pip install git+https://github.com/fenics/ffcx.git@${{ env.ffcx_ref }}
+
+      - name: Configure and build C++
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake --build build
+          cmake --install build
 
       # - name: Install Spack requirements
       #   run: |
