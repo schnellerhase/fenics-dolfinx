@@ -175,6 +175,9 @@ jobs:
           echo "C:\Python310" | Out-File -Append -FilePath $env:GITHUB_PATH
           echo "C:\Python310\Scripts" | Out-File -Append -FilePath $env:GITHUB_PATH
 
+      - name: Install Python dependencies
+        run: pip install pywin32
+
       - name: Clone Spack
         run: git clone https://github.com/spack/spack.git C:\spack
 
