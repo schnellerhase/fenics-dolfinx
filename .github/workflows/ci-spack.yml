@@ -191,7 +191,7 @@ jobs:
         run: |
           spack bootstrap now
 
-      - name: Try to install a package (example: cmake)
+      - name: Try to install a package (cmake)
         run: |
           spack install cmake
 
