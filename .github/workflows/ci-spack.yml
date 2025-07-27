@@ -195,7 +195,7 @@ jobs:
       #     spack install cmake
       - name: Load environment variables
         run: |
-          cat dolfinx/.github/workflows/fenicsx-refs.env >> $GITHUB_ENV
+          cat .github/workflows/fenicsx-refs.env >> $GITHUB_ENV
 
       - name: Install FEniCS Python components
         run: |
