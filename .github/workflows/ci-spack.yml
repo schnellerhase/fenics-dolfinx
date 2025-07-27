@@ -156,7 +156,7 @@ jobs:
     name: Windows
     runs-on: windows-latest
     steps:
-          - name: Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Git for Windows (optional)
