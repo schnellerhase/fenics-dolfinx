@@ -32,34 +32,50 @@
 from pathlib import Path
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
+from petsc4py.PETSc import ScalarType as stype  # type: ignore
 
 import numpy as np
 
+import basix.ufl
 import ufl
 from dolfinx import fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 
+rtype = np.real(stype(0)).dtype
+
 comm = MPI.COMM_WORLD
 
 meshes = []
-meshes.append(mesh.create_unit_square(comm, n := 10, n, dtype=ScalarType))
+meshes.append(mesh.create_unit_square(comm, n := 10, n, dtype=stype))
 
 tdim = meshes[0].topology.dim
+
+ufl_domain = ufl.Mesh(basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=rtype))
+el = basix.ufl.element("Lagrange", "triangle", 1, dtype=stype)
+V = ufl.FunctionSpace(ufl_domain, el)
+
+u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+a = ufl.inner(u, v) * ufl.dx(domain=ufl_domain)
+L = ufl.inner(-6, v) * ufl.dx(domain=ufl_domain)
+
+a_compiled = fem.compile_form(comm, a, form_compiler_options={"scalar_type": stype})
+L_compiled = fem.compile_form(comm, L, form_compiler_options={"scalar_type": stype})
 
 for it in range(max_it := 3):
     print(f"AFEM it. {it}:")
 
     msh = meshes[it]
 
-    V = fem.functionspace(msh, ("CG", 1))
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = ufl.inner(u, v) * ufl.dx
-    L = ufl.inner(-6, v) * ufl.dx
+    V = fem.functionspace(msh, el)
+
+    _a = fem.create_form(a_compiled, [V, V], msh, {}, {}, {})
+    _L = fem.create_form(L_compiled, [V], msh, {}, {}, {})
 
     print(" SOLVE:", end="")
-    problem = LinearProblem(a, L, petsc_options_prefix="solver")
-    problem.solve()
+    fem.assemble_matrix(_a)
+    fem.assemble_vector(_L)
+    # problem = LinearProblem(_a, _L, petsc_options_prefix="solver")
+    # problem.solve()
     print(" TODO")
 
     print(" ESTIMATE:")
