@@ -83,9 +83,8 @@ for it in range(max_it := 3):
     marker = np.random.default_rng(0).random(im_cell.size_local + im_cell.num_ghosts)
 
     print(" MARK: ", end="")
-    marked_cells = np.argwhere(
-        marker >= (theta := 0.5) * comm.allreduce(np.max(marker), MPI.MAX)
-    ).flatten()
+    theta = 0.5
+    marked_cells = mesh.mark_maximum(marker, theta, comm)
 
     msh.topology.create_entities(1)
     marked_edges = mesh.compute_incident_entities(msh.topology, marked_cells, tdim, 1)
